@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SimulinkClone.App.Controls.BlockControl"
+             Width="160" Height="80">
+
+  <Grid ColumnDefinitions="18,*,18"
+        RowDefinitions="*"
+        Background="Transparent">
+
+    <!-- INPUT side (2 ports stacked) -->
+    <Grid Grid.Column="0"
+          RowDefinitions="*,*"
+          VerticalAlignment="Center"
+          HorizontalAlignment="Center"
+          Background="Transparent">
+
+      <!-- Input 1 hitbox -->
+      <Border Grid.Row="0"
+              Width="18" Height="18"
+              Background="Transparent"
+              Margin="0,6,0,6">
+        <Border Name="InputPort1"
+                Width="12" Height="12"
+                CornerRadius="6"
+                Background="#3a3a3a"
+                BorderBrush="#9aa0a6"
+                BorderThickness="1"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"/>
+      </Border>
+
+      <!-- Input 2 hitbox -->
+      <Border Grid.Row="1"
+              Width="18" Height="18"
+              Background="Transparent"
+              Margin="0,6,0,6">
+        <Border Name="InputPort2"
+                Width="12" Height="12"
+                CornerRadius="6"
+                Background="#3a3a3a"
+                BorderBrush="#9aa0a6"
+                BorderThickness="1"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"/>
+      </Border>
+
+    </Grid>
+
+    <!-- BODY -->
+    <Border Name="Body"
+            Grid.Column="1"
+            CornerRadius="10"
+            Background="#2b2b2b"
+            BorderBrush="#555"
+            BorderThickness="1"
+            Padding="12">
+      <TextBlock Name="TitleText"
+                 Text="Block"
+                 Foreground="White"
+                 FontSize="14"
+                 VerticalAlignment="Center"/>
+    </Border>
+
+    <!-- OUTPUT (hitbox wrapper) -->
+    <Border Grid.Column="2"
+            Width="18" Height="18"
+            Background="Transparent"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center">
+      <Border Name="OutputPort"
+              Width="12" Height="12"
+              CornerRadius="6"
+              Background="#3a3a3a"
+              BorderBrush="#9aa0a6"
+              BorderThickness="1"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center"/>
+    </Border>
+
+  </Grid>
+</UserControl>

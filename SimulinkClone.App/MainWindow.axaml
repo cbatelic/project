@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SimulinkClone.App.MainWindow"
+        Width="1200" Height="800"
+        Title="SimulinkClone">
+    
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="260,*">
+
+        <!-- Left toolbox -->
+        <Border Grid.RowSpan="2" Grid.Column="0" Background="#1e1e1e" Padding="12">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Toolbox" FontSize="18" Foreground="White"/>
+                <Button Name="BtnConstant" Content="Constant" />
+                <Button Name="BtnAdd" Content="Add" />
+                <Button Name="BtnIntegrator" Content="Integrator" />
+            </StackPanel>
+        </Border>
+
+        <!-- Top bar -->
+        <Border Grid.Row="0" Grid.Column="1" Background="#2a2a2a" Padding="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Run" />
+                <Button Content="Stop" />
+                <TextBlock Text="(kasnije: dt, T, status...)" Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Canvas area -->
+        <Border Grid.Row="1" Grid.Column="1" Background="#111">
+            <Canvas Name="EditorCanvas"
+                    Background="Transparent" />
+        </Border>
+
+    </Grid>
+</Window>

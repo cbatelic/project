@@ -1,0 +1,13 @@
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.deps.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.dll
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.pdb
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.xml
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.fsproj.AssemblyReference.cache
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.AssemblyInfoInputs.cache
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.AssemblyInfo.fs
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.fsproj.CoreCompileInputs.cache
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.dll
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\refint\SimulinkClone.Core.dll
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.xml
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.pdb
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\ref\SimulinkClone.Core.dll

@@ -1,0 +1,165 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj",
+        "projectName": "SimulinkClone.App",
+        "projectPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj",
+        "packagesPath": "C:\\Users\\Koristnik\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Koristnik\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net10.0"
+        ],
+        "sources": {
+          "C:\\Program Files\\dotnet\\sdk\\10.0.100\\FSharp\\library-packs": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://nuget.ptabusiness.com/api/packages/protech/nuget/index.json": {}
+        },
+        "frameworks": {
+          "net10.0": {
+            "targetAlias": "net10.0",
+            "projectReferences": {
+              "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj": {
+                "projectPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj"
+              }
+            }
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net10.0": {
+          "targetAlias": "net10.0",
+          "dependencies": {
+            "Avalonia": {
+              "target": "Package",
+              "version": "[11.3.11, )",
+              "generatePathProperty": true
+            },
+            "Avalonia.Desktop": {
+              "target": "Package",
+              "version": "[11.3.11, )",
+              "generatePathProperty": true
+            },
+            "Avalonia.Diagnostics": {
+              "target": "Package",
+              "version": "[11.3.11, )",
+              "generatePathProperty": true
+            },
+            "Avalonia.Fonts.Inter": {
+              "target": "Package",
+              "version": "[11.3.11, )",
+              "generatePathProperty": true
+            },
+            "Avalonia.Themes.Fluent": {
+              "target": "Package",
+              "version": "[11.3.11, )",
+              "generatePathProperty": true
+            },
+            "FSharp.Core": {
+              "include": "Runtime, Compile, Build, Native, Analyzers, BuildTransitive",
+              "target": "Package",
+              "version": "[10.0.100, )",
+              "generatePathProperty": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj",
+        "projectName": "SimulinkClone.Core",
+        "projectPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj",
+        "packagesPath": "C:\\Users\\Koristnik\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Koristnik\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net10.0"
+        ],
+        "sources": {
+          "C:\\Program Files\\dotnet\\sdk\\10.0.100\\FSharp\\library-packs": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://nuget.ptabusiness.com/api/packages/protech/nuget/index.json": {}
+        },
+        "frameworks": {
+          "net10.0": {
+            "targetAlias": "net10.0",
+            "projectReferences": {}
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net10.0": {
+          "targetAlias": "net10.0",
+          "dependencies": {
+            "FSharp.Core": {
+              "include": "Runtime, Compile, Build, Native, Analyzers, BuildTransitive",
+              "target": "Package",
+              "version": "[10.0.100, )",
+              "generatePathProperty": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

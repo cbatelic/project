@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>SimulinkClone.Core</name></assembly>
+<members>
+<member name="T:SimulinkClone.Core.Simulation.StatelessBlock`2">
+<summary>
+ Stateless blok: samo funkcija
+</summary>
+</member>
+<member name="T:SimulinkClone.Core.Simulation.StatefulBlock`3">
+<summary>
+ Stateful blok: ima state i step funkciju koja vraća output + novi state
+</summary>
+</member>
+<member name="T:SimulinkClone.Core.Simulation.Sample`1">
+<summary>
+ Jedan uzorak signala u vremenu
+</summary>
+</member>
+<member name="T:SimulinkClone.Core.Simulation.Dt">
+<summary>
+ Diskretni korak
+</summary>
+</member>
+<member name="T:SimulinkClone.Core.Simulation.Time">
+<summary>
+ Vrijeme u sekundama
+</summary>
+</member>
+<member name="M:SimulinkClone.Core.Simulation.Engine.demoIntegratorRamp(System.Double,System.Int32)">
+<summary>
+ Pokreni “ručno spojeni” mali pipeline:
+ u(t) = add( constant(1), constant(2) ) = 3
+ y(t) = integrator(0) of u(t)  =&gt; ramp 0, 0, 0.3, 0.6 ...
+</summary>
+</member>
+<member name="M:SimulinkClone.Core.Simulation.Engine.runStateful``3(System.Double,System.Int32,Microsoft.FSharp.Core.FSharpFunc{System.Double,``0},SimulinkClone.Core.Simulation.StatefulBlock{``0,``1,``2})">
+<summary>
+ Pokreni stateful blok kroz N koraka uz input funkciju u(t)
+</summary>
+</member>
+<member name="M:SimulinkClone.Core.Simulation.Blocks.integrator(System.Double)">
+<summary>
+ Diskretni integrator (Euler):
+ x_{k+1} = x_k + dt * u_k
+ y_k = x_k
+</summary>
+</member>
+</members>
+</doc>

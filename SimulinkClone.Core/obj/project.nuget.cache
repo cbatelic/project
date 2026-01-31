@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "L1gLwcgSNvw=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Koristnik\\.nuget\\packages\\fsharp.core\\10.0.100\\fsharp.core.10.0.100.nupkg.sha512"
+  ],
+  "logs": []
+}

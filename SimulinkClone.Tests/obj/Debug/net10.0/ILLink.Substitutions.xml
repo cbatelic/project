@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="SimulinkClone.Tests">
+    <resource name="FSharpSignatureData.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpOptimizationData.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.SimulinkClone.Tests" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.SimulinkClone.Tests" action="remove"></resource>
+  </assembly>
+</linker>

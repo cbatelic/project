@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="SimulinkClone.Core">
+    <resource name="FSharpSignatureData.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpOptimizationData.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.SimulinkClone.Core" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.SimulinkClone.Core" action="remove"></resource>
+  </assembly>
+</linker>
