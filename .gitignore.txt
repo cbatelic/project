@@ -1,0 +1,19 @@
+# .NET build
+bin/
+obj/
+*.user
+*.rsuser
+*.suo
+*.cache
+*.log
+
+# Rider
+.idea/
+*.DotSettings.user
+
+# Avalonia
+*.pdb
+
+# OS
+.DS_Store
+Thumbs.db
