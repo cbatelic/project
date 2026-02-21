@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="SimulinkClone.App/SimulinkClone.App.fsproj" />
   <Project Path="SimulinkClone.Core/SimulinkClone.Core.fsproj" />
+  <Project Path="SimulinkClone.Service/SimulinkClone.Service.fsproj" />
   <Project Path="SimulinkClone.Tests/SimulinkClone.Tests.fsproj" />
 </Solution>

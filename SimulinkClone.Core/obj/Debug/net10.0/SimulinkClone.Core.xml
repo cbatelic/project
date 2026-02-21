@@ -46,5 +46,33 @@
  y_k = x_k
 </summary>
 </member>
+<member name="M:SimulinkClone.Core.Simulation.GraphEngine.runGraph(System.Double,System.Int32,Microsoft.FSharp.Collections.FSharpList{System.String},SimulinkClone.Core.Simulation.Graph)">
+<summary>
+ Simulacija grafa kroz vrijeme (Constant/Add/Integrator)
+ Integrator:
+  - input: In1
+  - state init: node.constant (ako None -&gt; 0.0)
+  - y = x (prije update-a)
+  - xNext = x + dt*u
+
+ outputs: lista nodeId koje želiš kao series
+</summary>
+</member>
+<member name="M:SimulinkClone.Core.Simulation.GraphEngine.evalOnce(SimulinkClone.Core.Simulation.Graph)">
+<summary>
+ evaluira graf u jednoj točki (bez vremena) -&gt; output vrijednosti po nodeId
+ (Integrator nije podržan ovdje)
+</summary>
+</member>
+<member name="M:SimulinkClone.Core.Simulation.GraphEngine.topoOrder(SimulinkClone.Core.Simulation.Graph)">
+<summary>
+ topo order (assumes Graph.validate already ok, i.e. DAG + ports ok)
+</summary>
+</member>
+<member name="M:SimulinkClone.Core.Simulation.GraphEngine.tryGetInput(SimulinkClone.Core.Simulation.Graph,System.String,SimulinkClone.Core.Simulation.InputPort)">
+<summary>
+ helper: find source for a given toId+port
+</summary>
+</member>
 </members>
 </doc>

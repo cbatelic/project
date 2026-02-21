@@ -9,6 +9,11 @@
     <Compile Include="Domain.fs" />
     <Compile Include="Simulation\Types.fs" />
     <Compile Include="Simulation\Engine.fs" />
+    <Compile Include="Simulation\Graph.fs" />
+    <Compile Include="Simulation\GraphEngine.fs" />
   </ItemGroup>
 
 </Project>
+
+
+

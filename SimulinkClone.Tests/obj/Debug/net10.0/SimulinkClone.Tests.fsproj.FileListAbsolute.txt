@@ -112,3 +112,4 @@ C:\Users\Koristnik\SimulinkClone\SimulinkClone.Tests\obj\Debug\net10.0\refint\Si
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Tests\obj\Debug\net10.0\SimulinkClone.Tests.pdb
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Tests\obj\Debug\net10.0\SimulinkClone.Tests.genruntimeconfig.cache
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Tests\obj\Debug\net10.0\ref\SimulinkClone.Tests.dll
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Tests\obj\Debug\net10.0\SimulinkClone.Tests.sourcelink.json

@@ -11,3 +11,4 @@ C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\refint\Sim
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.xml
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.pdb
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\ref\SimulinkClone.Core.dll
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.sourcelink.json

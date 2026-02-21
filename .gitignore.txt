@@ -17,3 +17,5 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+
+SimulinkClone.Service/Data/graphs/*.json

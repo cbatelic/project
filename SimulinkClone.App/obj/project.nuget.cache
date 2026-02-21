@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "WWcDQUDn14A=",
+  "dgSpecHash": "TbYMaODwDJI=",
   "success": true,
   "projectFilePath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj",
   "expectedPackageFiles": [
@@ -31,7 +31,6 @@
     "C:\\Users\\Koristnik\\.nuget\\packages\\skiasharp.nativeassets.macos\\2.88.9\\skiasharp.nativeassets.macos.2.88.9.nupkg.sha512",
     "C:\\Users\\Koristnik\\.nuget\\packages\\skiasharp.nativeassets.webassembly\\2.88.9\\skiasharp.nativeassets.webassembly.2.88.9.nupkg.sha512",
     "C:\\Users\\Koristnik\\.nuget\\packages\\skiasharp.nativeassets.win32\\2.88.9\\skiasharp.nativeassets.win32.2.88.9.nupkg.sha512",
-    "C:\\Users\\Koristnik\\.nuget\\packages\\system.io.pipelines\\8.0.0\\system.io.pipelines.8.0.0.nupkg.sha512",
     "C:\\Users\\Koristnik\\.nuget\\packages\\tmds.dbus.protocol\\0.21.2\\tmds.dbus.protocol.0.21.2.nupkg.sha512"
   ],
   "logs": []

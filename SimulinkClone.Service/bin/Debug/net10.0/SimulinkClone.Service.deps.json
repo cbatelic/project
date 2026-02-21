@@ -1,0 +1,180 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "SimulinkClone.Service/1.0.0": {
+        "dependencies": {
+          "FSharp.Core": "10.0.100",
+          "SimulinkClone.Core": "1.0.0",
+          "Swashbuckle.AspNetCore": "10.1.4"
+        },
+        "runtime": {
+          "SimulinkClone.Service.dll": {}
+        }
+      },
+      "FSharp.Core/10.0.100": {
+        "runtime": {
+          "lib/netstandard2.1/FSharp.Core.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.1.25.52411"
+          }
+        },
+        "resources": {
+          "lib/netstandard2.1/cs/FSharp.Core.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/netstandard2.1/de/FSharp.Core.resources.dll": {
+            "locale": "de"
+          },
+          "lib/netstandard2.1/es/FSharp.Core.resources.dll": {
+            "locale": "es"
+          },
+          "lib/netstandard2.1/fr/FSharp.Core.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/netstandard2.1/it/FSharp.Core.resources.dll": {
+            "locale": "it"
+          },
+          "lib/netstandard2.1/ja/FSharp.Core.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/netstandard2.1/ko/FSharp.Core.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/netstandard2.1/pl/FSharp.Core.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/netstandard2.1/pt-BR/FSharp.Core.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/netstandard2.1/ru/FSharp.Core.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/netstandard2.1/tr/FSharp.Core.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/netstandard2.1/zh-Hans/FSharp.Core.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/netstandard2.1/zh-Hant/FSharp.Core.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      },
+      "Microsoft.OpenApi/2.4.1": {
+        "runtime": {
+          "lib/net8.0/Microsoft.OpenApi.dll": {
+            "assemblyVersion": "2.4.1.0",
+            "fileVersion": "2.4.1.0"
+          }
+        }
+      },
+      "Swashbuckle.AspNetCore/10.1.4": {
+        "dependencies": {
+          "Swashbuckle.AspNetCore.Swagger": "10.1.4",
+          "Swashbuckle.AspNetCore.SwaggerGen": "10.1.4",
+          "Swashbuckle.AspNetCore.SwaggerUI": "10.1.4"
+        }
+      },
+      "Swashbuckle.AspNetCore.Swagger/10.1.4": {
+        "dependencies": {
+          "Microsoft.OpenApi": "2.4.1"
+        },
+        "runtime": {
+          "lib/net10.0/Swashbuckle.AspNetCore.Swagger.dll": {
+            "assemblyVersion": "10.1.4.0",
+            "fileVersion": "10.1.4.2255"
+          }
+        }
+      },
+      "Swashbuckle.AspNetCore.SwaggerGen/10.1.4": {
+        "dependencies": {
+          "Swashbuckle.AspNetCore.Swagger": "10.1.4"
+        },
+        "runtime": {
+          "lib/net10.0/Swashbuckle.AspNetCore.SwaggerGen.dll": {
+            "assemblyVersion": "10.1.4.0",
+            "fileVersion": "10.1.4.2255"
+          }
+        }
+      },
+      "Swashbuckle.AspNetCore.SwaggerUI/10.1.4": {
+        "runtime": {
+          "lib/net10.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
+            "assemblyVersion": "10.1.4.0",
+            "fileVersion": "10.1.4.2255"
+          }
+        }
+      },
+      "SimulinkClone.Core/1.0.0": {
+        "dependencies": {
+          "FSharp.Core": "10.0.100"
+        },
+        "runtime": {
+          "SimulinkClone.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "SimulinkClone.Service/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "FSharp.Core/10.0.100": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-c/r6T/HE9MWL0O0OispLtaKhVwDsiYQlLS249LoxSo1HNH/wfc0f5DE4pI6WpTXkCEdeXa66K5f9FmKLr/0cmw==",
+      "path": "fsharp.core/10.0.100",
+      "hashPath": "fsharp.core.10.0.100.nupkg.sha512"
+    },
+    "Microsoft.OpenApi/2.4.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-u7QhXCISMQuab3flasb1hoaiERmUqyWsW7tmQODyILoQ7mJV5IRGM+2KKZYo0QUfC13evEOcHAb6TPWgqEQtrw==",
+      "path": "microsoft.openapi/2.4.1",
+      "hashPath": "microsoft.openapi.2.4.1.nupkg.sha512"
+    },
+    "Swashbuckle.AspNetCore/10.1.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3y9YcUdzND3E21NiGvhxEVw2/rdQSbSLDOxrAMP96ZCaDVeB8b30L8QeWA9cfkxfyeXt+F2t1umKE0kaPxm4FA==",
+      "path": "swashbuckle.aspnetcore/10.1.4",
+      "hashPath": "swashbuckle.aspnetcore.10.1.4.nupkg.sha512"
+    },
+    "Swashbuckle.AspNetCore.Swagger/10.1.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4ac45rVXsgustOXx6abChvIXtWjc1gUgwEpExz8pkQTTXjVTuRtfyMCN0srgxwpIAw/UoH/LYcbgqrjRcYwhfg==",
+      "path": "swashbuckle.aspnetcore.swagger/10.1.4",
+      "hashPath": "swashbuckle.aspnetcore.swagger.10.1.4.nupkg.sha512"
+    },
+    "Swashbuckle.AspNetCore.SwaggerGen/10.1.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-gbh8gJ97lMw0ScCdbEhAzwlHSWKiTzYtHfS6/e7u4e4c0ms6mOccLFgRsWF0ekgpDh+AlA0yWc5X5ec+6cxCXQ==",
+      "path": "swashbuckle.aspnetcore.swaggergen/10.1.4",
+      "hashPath": "swashbuckle.aspnetcore.swaggergen.10.1.4.nupkg.sha512"
+    },
+    "Swashbuckle.AspNetCore.SwaggerUI/10.1.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-A1ewmv/Xq5YkjQoSW29Kc9IoIC6pu210F1Fmzmj1EO7QJLTs6w3tOJatST6s41+Y8eUr5A1JLiXZ14U5EgN6ow==",
+      "path": "swashbuckle.aspnetcore.swaggerui/10.1.4",
+      "hashPath": "swashbuckle.aspnetcore.swaggerui.10.1.4.nupkg.sha512"
+    },
+    "SimulinkClone.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
