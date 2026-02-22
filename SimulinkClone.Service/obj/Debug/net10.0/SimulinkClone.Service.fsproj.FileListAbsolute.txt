@@ -51,3 +51,4 @@ C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\obj\Debug\net10.0\refint\
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\obj\Debug\net10.0\SimulinkClone.Service.pdb
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\obj\Debug\net10.0\SimulinkClone.Service.genruntimeconfig.cache
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\obj\Debug\net10.0\ref\SimulinkClone.Service.dll
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\6c80afcc871e48e7b8994e8edadd6759.json
