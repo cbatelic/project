@@ -1485,25 +1485,26 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Koristnik\\.nuget\\packages\\": {}
+    "C:\\Users\\Leonarda\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj",
+      "projectUniqueName": "E:\\Avlonia\\project\\SimulinkClone.App\\SimulinkClone.App.fsproj",
       "projectName": "SimulinkClone.App",
-      "projectPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\SimulinkClone.App.fsproj",
-      "packagesPath": "C:\\Users\\Koristnik\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.App\\obj\\",
+      "projectPath": "E:\\Avlonia\\project\\SimulinkClone.App\\SimulinkClone.App.fsproj",
+      "packagesPath": "C:\\Users\\Leonarda\\.nuget\\packages\\",
+      "outputPath": "E:\\Avlonia\\project\\SimulinkClone.App\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Koristnik\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Leonarda\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
         "C:\\Program Files\\dotnet\\sdk\\10.0.100\\FSharp\\library-packs": {},
+        "E:\\Projects\\PTA_LEVEL2\\NUGET": {},
         "https://api.nuget.org/v3/index.json": {},
         "https://nuget.ptabusiness.com/api/packages/protech/nuget/index.json": {}
       },
@@ -1511,8 +1512,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj": {
-              "projectPath": "C:\\Users\\Koristnik\\SimulinkClone\\SimulinkClone.Core\\SimulinkClone.Core.fsproj"
+            "E:\\Avlonia\\project\\SimulinkClone.Core\\SimulinkClone.Core.fsproj": {
+              "projectPath": "E:\\Avlonia\\project\\SimulinkClone.Core\\SimulinkClone.Core.fsproj"
             }
           }
         }

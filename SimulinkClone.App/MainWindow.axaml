@@ -1,18 +1,32 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="SimulinkClone.App.MainWindow"
-        Width="1200" Height="800"
+        Width="1400" Height="800"
         Title="SimulinkClone">
-    
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="260,*">
+
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="260,*,320">
 
         <!-- Left toolbox -->
         <Border Grid.RowSpan="2" Grid.Column="0" Background="#1e1e1e" Padding="12">
             <StackPanel Spacing="8">
                 <TextBlock Text="Toolbox" FontSize="18" Foreground="White"/>
+
+                <!-- blocks -->
                 <Button Name="BtnConstant" Content="Constant" />
-                <Button Name="BtnAdd" Content="Add" />
+                <Button Name="BtnAdd" Content="Summation (Add)" />
                 <Button Name="BtnIntegrator" Content="Integrator" />
+                <Button Name="BtnConstraint" Content="Constraint" />
+
+                <Separator Margin="0,6,0,6"/>
+
+                <Button x:Name="BtnPing" Content="Ping Service (/health)" Width="200"/>
+
+                <!-- small log -->
+                <TextBox x:Name="TxtOutput"
+                         Height="160"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         IsReadOnly="True"/>
             </StackPanel>
         </Border>
 
@@ -29,6 +43,23 @@
         <Border Grid.Row="1" Grid.Column="1" Background="#111">
             <Canvas Name="EditorCanvas"
                     Background="Transparent" />
+        </Border>
+
+        <!-- Right inspector -->
+        <Border Grid.RowSpan="2" Grid.Column="2" Background="#161616" Padding="12">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Inspector" FontSize="18" Foreground="White"/>
+
+                <!-- this gets filled dynamically -->
+                <StackPanel Name="InspectorHost" Spacing="8"/>
+
+                <Separator Margin="0,8,0,8"/>
+
+                <TextBlock Text="Hint:" Foreground="#bdbdbd"/>
+                <TextBlock Text="Klikni blok na canvasu da vidiš njegov UI ovdje desno."
+                           TextWrapping="Wrap"
+                           Foreground="#8f8f8f"/>
+            </StackPanel>
         </Border>
 
     </Grid>

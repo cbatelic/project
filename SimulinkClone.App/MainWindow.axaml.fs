@@ -7,11 +7,12 @@ open Avalonia.Input
 open Avalonia.Markup.Xaml
 open Avalonia.Media
 open Avalonia.Controls.Shapes
+open Avalonia.Layout
 open SimulinkClone.App.Controls
 
 type PortRef =
     { Block: BlockControl
-      Input: InputPortId option } 
+      Input: InputPortId option }
 
 type Connection =
     { From: PortRef
@@ -53,9 +54,109 @@ type MainWindow() as this =
     let mutable sourceOutput: PortRef option = None
     let mutable tempConn: TempConnection option = None
 
+    let mutable selectedBlock: BlockControl option = None
+
     let initXaml () =
         AvaloniaXamlLoader.Load(this) |> ignore
 
+    let setOutput (text: string) =
+        let tb = this.FindControl<TextBox>("TxtOutput")
+        tb.Text <- text
+
+    let clearInspector () =
+        let host = this.FindControl<StackPanel>("InspectorHost")
+        host.Children.Clear()
+
+    // ---------- Inspector UI helpers ----------
+    let mkLabel (text: string) =
+        let t = TextBlock()
+        t.Text <- text
+        t.Foreground <- Brushes.White
+        t.FontWeight <- FontWeight.SemiBold
+        t
+
+    let mkMuted (text: string) =
+        let t = TextBlock()
+        t.Text <- text
+        t.Foreground <- SolidColorBrush(Color.Parse("#a7a7a7"))
+        t.TextWrapping <- TextWrapping.Wrap
+        t
+
+    let mkRow (label: string) (value: string) =
+        let row = Grid()
+        row.ColumnDefinitions <- ColumnDefinitions("120,*")
+
+        let l = TextBlock()
+        l.Text <- label
+        l.Foreground <- SolidColorBrush(Color.Parse("#bdbdbd"))
+        Grid.SetColumn(l, 0)
+
+        let v = TextBlock()
+        v.Text <- value
+        v.Foreground <- Brushes.White
+        Grid.SetColumn(v, 1)
+
+        row.Children.Add(l) |> ignore
+        row.Children.Add(v) |> ignore
+        row
+
+    let kindOf (b: BlockControl) =
+        let k = b.Kind
+        if isNull k then "" else k.Trim().ToLowerInvariant()
+
+    let showInspectorForBlock (canvas: Canvas) (b: BlockControl) =
+        let host = this.FindControl<StackPanel>("InspectorHost")
+        host.Children.Clear()
+
+        let k = kindOf b
+        let x = Canvas.GetLeft(b)
+        let y = Canvas.GetTop(b)
+
+        host.Children.Add(mkLabel "Block") |> ignore
+        host.Children.Add(mkRow "Kind" (if k = "" then "(unknown)" else k)) |> ignore
+        host.Children.Add(mkRow "Id" b.NodeId) |> ignore
+        host.Children.Add(mkRow "X" (sprintf "%.1f" x)) |> ignore
+        host.Children.Add(mkRow "Y" (sprintf "%.1f" y)) |> ignore
+
+        let sep = Separator()
+        sep.Margin <- Thickness(0.0, 6.0, 0.0, 6.0)
+        host.Children.Add(sep) |> ignore
+
+        match k with
+        | "constant" ->
+            host.Children.Add(mkLabel "Constant") |> ignore
+            let cTxt =
+                match b.Constant with
+                | Some v -> sprintf "%g" v
+                | None -> "-"
+            host.Children.Add(mkRow "Value (C)" cTxt) |> ignore
+            host.Children.Add(mkMuted "Double-click block to edit (dialog).") |> ignore
+
+        | "integrator" ->
+            host.Children.Add(mkLabel "Integrator") |> ignore
+            let x0Txt =
+                match b.IntegratorInitial with
+                | Some v -> sprintf "%g" v
+                | None -> "-"
+            host.Children.Add(mkRow "Initial (x0)" x0Txt) |> ignore
+            host.Children.Add(mkMuted "Double-click block to edit (dialog).") |> ignore
+
+        | "add" ->
+            host.Children.Add(mkLabel "Summation") |> ignore
+            host.Children.Add(mkRow "Operation" "In1 + In2") |> ignore
+            host.Children.Add(mkMuted "Kasnije: izbor znakova (+/-) kao u Simulinku.") |> ignore
+
+        | "constraint" ->
+            host.Children.Add(mkLabel "Constraint") |> ignore
+            host.Children.Add(mkRow "Mode" "Clamp") |> ignore
+            host.Children.Add(mkRow "Min" "-") |> ignore
+            host.Children.Add(mkRow "Max" "-") |> ignore
+            host.Children.Add(mkMuted "Kasnije: Min/Max polja + validacija.") |> ignore
+
+        | _ ->
+            host.Children.Add(mkMuted "Nema UI definiran za ovaj blok još.") |> ignore
+
+    // ---------- Geometry helpers ----------
     let getOutputPortPosition (block: BlockControl) (canvas: Canvas) =
         let port = block.FindControl<Border>("OutputPort")
         port.TranslatePoint(Point(6, 6), canvas).Value
@@ -71,8 +172,15 @@ type MainWindow() as this =
     let clamp (v: float) (minV: float) (maxV: float) =
         Math.Max(minV, Math.Min(maxV, v))
 
-    let updateBezierAndArrow (startP: Point) (endP: Point) (fig: PathFigure) (seg: BezierSegment)
-                             (arrowFig: PathFigure) (arrowSeg1: LineSegment) (arrowSeg2: LineSegment) =
+    let updateBezierAndArrow
+        (startP: Point)
+        (endP: Point)
+        (fig: PathFigure)
+        (seg: BezierSegment)
+        (arrowFig: PathFigure)
+        (arrowSeg1: LineSegment)
+        (arrowSeg2: LineSegment) =
+
         let dist = abs (endP.X - startP.X)
         let dx = clamp (dist * 0.6) 40.0 240.0
 
@@ -117,7 +225,6 @@ type MainWindow() as this =
                 Stroke = Brushes.Gold,
                 StrokeThickness = 2.0
             )
-
         path.IsHitTestVisible <- false
 
         let arrowGeom = PathGeometry()
@@ -135,7 +242,6 @@ type MainWindow() as this =
                 Stroke = Brushes.Gold,
                 StrokeThickness = 1.0
             )
-
         arrow.IsHitTestVisible <- false
 
         geom, fig, seg, path, arrowGeom, arrowFig, ls1, ls2, arrow
@@ -161,7 +267,6 @@ type MainWindow() as this =
                     match c.To_.Input with
                     | Some pid -> getInputPortPosition c.To_.Block pid canvas
                     | None -> getOutputPortPosition c.To_.Block canvas
-
                 updateBezierAndArrow startP endP c.Fig c.Seg c.ArrowFig c.ArrowSeg1 c.ArrowSeg2
 
     do
@@ -169,23 +274,57 @@ type MainWindow() as this =
 
         let canvas = this.FindControl<Canvas>("EditorCanvas")
 
-        let addBlock (title: string) =
+        let selectBlock (b: BlockControl) =
+            selectedBlock <- Some b
+            showInspectorForBlock canvas b
+            setOutput (sprintf "Selected: %s (%s)" b.NodeId (kindOf b))
+
+        let addBlock (kind: string) =
             let b = BlockControl()
-            b.SetTitle(title)
+
+            let k = kind.Trim().ToLowerInvariant()
+            b.Kind <- k
+
+            match k with
+            | "constant" ->
+                b.SetTitle("Constant")
+                b.Constant <- Some 1.0
+                b.IntegratorInitial <- None
+            | "add" ->
+                b.SetTitle("Add")
+                b.Constant <- None
+                b.IntegratorInitial <- None
+            | "integrator" ->
+                b.SetTitle("Integrator")
+                b.IntegratorInitial <- Some 0.0
+                b.Constant <- None
+            | "constraint" ->
+                b.SetTitle("Constraint")
+                b.Constant <- None
+                b.IntegratorInitial <- None
+            | _ ->
+                b.SetTitle(kind)
 
             Canvas.SetLeft(b, nextX)
             Canvas.SetTop(b, nextY)
             nextX <- nextX + 30.0
             nextY <- nextY + 30.0
 
+            // ✅ FIX: double click opens dialog, single click drags
             b.PointerPressed.Add(fun args ->
                 if not args.Handled then
-                    dragging <- Some b
-                    let p = args.GetPosition(canvas)
-                    let left = Canvas.GetLeft(b)
-                    let top = Canvas.GetTop(b)
-                    dragOffset <- Point(p.X - left, p.Y - top)
-                    args.Pointer.Capture(b) |> ignore
+                    selectBlock b
+
+                    if args.ClickCount = 2 then
+                        args.Handled <- true
+                        b.OpenEditDialog()
+                    else
+                        dragging <- Some b
+                        let p = args.GetPosition(canvas)
+                        let left = Canvas.GetLeft(b)
+                        let top = Canvas.GetTop(b)
+                        dragOffset <- Point(p.X - left, p.Y - top)
+                        args.Pointer.Capture(b) |> ignore
             )
 
             b.PointerReleased.Add(fun args ->
@@ -194,6 +333,7 @@ type MainWindow() as this =
                     args.Pointer.Capture(null) |> ignore
             )
 
+            // connect logic
             b.OutputPortClicked.Add(fun src ->
                 cancelConnect canvas
                 sourceOutput <- Some { Block = src; Input = None }
@@ -286,10 +426,16 @@ type MainWindow() as this =
 
             canvas.Children.Add(b) |> ignore
 
-        this.FindControl<Button>("BtnConstant").Click.Add(fun _ -> addBlock "Constant")
-        this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "Add")
-        this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "Integrator")
+            // auto-select new block
+            selectBlock b
 
+        // Toolbox buttons
+        this.FindControl<Button>("BtnConstant").Click.Add(fun _ -> addBlock "constant")
+        this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
+        this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
+        this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
+
+        // Move dragging + temp connection
         canvas.PointerMoved.Add(fun args ->
             let p = args.GetPosition(canvas)
 
@@ -298,6 +444,12 @@ type MainWindow() as this =
                 Canvas.SetLeft(b, p.X - dragOffset.X)
                 Canvas.SetTop(b, p.Y - dragOffset.Y)
                 updateAllConnectionsForBlock canvas b
+
+                // update inspector while dragging selected block
+                match selectedBlock with
+                | Some sb when obj.ReferenceEquals(sb, b) ->
+                    showInspectorForBlock canvas sb
+                | _ -> ()
             | None -> ()
 
             match sourceOutput, tempConn with
@@ -307,12 +459,13 @@ type MainWindow() as this =
             | _ -> ()
         )
 
+        // Click empty canvas -> clear selection (+ cancel connect if active)
         canvas.PointerPressed.Add(fun args ->
-            match sourceOutput with
-            | None -> ()
-            | Some _ ->
-                if obj.ReferenceEquals(args.Source, canvas) then
-                    cancelConnect canvas
+            if obj.ReferenceEquals(args.Source, canvas) then
+                selectedBlock <- None
+                clearInspector()
+                setOutput ""
+                match sourceOutput with
+                | None -> ()
+                | Some _ -> cancelConnect canvas
         )
-
-
