@@ -33,9 +33,9 @@
         <!-- Top bar -->
         <Border Grid.Row="0" Grid.Column="1" Background="#2a2a2a" Padding="10">
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Run" />
+                <Button Name="BtnRun" Content="Run" />
                 <Button Content="Stop" />
-                <TextBlock Text="(kasnije: dt, T, status...)" Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock  Foreground="White" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 

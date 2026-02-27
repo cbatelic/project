@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Compile order matters in F# -->
+    <Compile Include="Api\UiDtos.fs" />
     <Compile Include="Api\ServiceClient.fs" />
+
     <Compile Include="Controls\BlockControl.axaml.fs" />
     <Compile Include="MainWindow.axaml.fs" />
     <Compile Include="App.axaml.fs" />
-    <!-- EntryPoint must be last -->
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -30,4 +30,5 @@
   <ItemGroup>
     <ProjectReference Include="..\SimulinkClone.Core\SimulinkClone.Core.fsproj" />
   </ItemGroup>
+
 </Project>

@@ -1,6 +1,8 @@
 namespace SimulinkClone.App
 
 open System
+open System.Threading.Tasks
+
 open Avalonia
 open Avalonia.Controls
 open Avalonia.Input
@@ -8,7 +10,10 @@ open Avalonia.Markup.Xaml
 open Avalonia.Media
 open Avalonia.Controls.Shapes
 open Avalonia.Layout
+
 open SimulinkClone.App.Controls
+open SimulinkClone.App.Api
+open SimulinkClone.App.Api.ServiceClient
 
 type PortRef =
     { Block: BlockControl
@@ -42,6 +47,8 @@ type TempConnection =
 
 type MainWindow() as this =
     inherit Window()
+
+    let BASE_URL = "http://localhost:5256/"
 
     let mutable nextX = 60.0
     let mutable nextY = 60.0
@@ -273,6 +280,7 @@ type MainWindow() as this =
         initXaml()
 
         let canvas = this.FindControl<Canvas>("EditorCanvas")
+        let client = ServiceClient(BASE_URL)
 
         let selectBlock (b: BlockControl) =
             selectedBlock <- Some b
@@ -281,7 +289,6 @@ type MainWindow() as this =
 
         let addBlock (kind: string) =
             let b = BlockControl()
-
             let k = kind.Trim().ToLowerInvariant()
             b.Kind <- k
 
@@ -310,7 +317,7 @@ type MainWindow() as this =
             nextX <- nextX + 30.0
             nextY <- nextY + 30.0
 
-            // ✅ FIX: double click opens dialog, single click drags
+            // double click opens dialog, single click drags
             b.PointerPressed.Add(fun args ->
                 if not args.Handled then
                     selectBlock b
@@ -341,7 +348,6 @@ type MainWindow() as this =
 
                 let startP = getOutputPortPosition src canvas
                 let geom, fig, seg, path, arrowGeom, arrowFig, ls1, ls2, arrow = createBezierPath()
-
                 updateBezierAndArrow startP startP fig seg arrowFig ls1 ls2
 
                 canvas.Children.Insert(0, path) |> ignore
@@ -425,8 +431,6 @@ type MainWindow() as this =
             )
 
             canvas.Children.Add(b) |> ignore
-
-            // auto-select new block
             selectBlock b
 
         // Toolbox buttons
@@ -434,6 +438,59 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
+
+        // ✅ Ping button => /health
+        this.FindControl<Button>("BtnPing").Click.Add(fun _ ->
+            task {
+                try
+                    let! res = client.GetHealthAsync()
+                    setOutput res
+                with ex ->
+                    setOutput ("PING ERROR: " + ex.Message)
+            } |> ignore
+        )
+
+        // ✅ Run button => send graph to backend eval-once
+        this.FindControl<Button>("BtnRun").Click.Add(fun _ ->
+            task {
+                try
+                    let nodes =
+                        canvas.Children
+                        |> Seq.choose (fun c ->
+                            match c with
+                            | :? BlockControl as b ->
+                                Some {
+                                    id = b.NodeId
+                                    kind = b.Kind
+                                    constant = b.Constant
+                                    x = Canvas.GetLeft(b)
+                                    y = Canvas.GetTop(b)
+                                }
+                            | _ -> None)
+                        |> Seq.toList
+
+                    let edges =
+                        connections
+                        |> Seq.map (fun e ->
+                            { fromId = e.From.Block.NodeId
+                              toId = e.To_.Block.NodeId
+                              toPort =
+                                match e.To_.Input with
+                                | Some In1 -> 1
+                                | Some In2 -> 2
+                                | None -> 1 })
+                        |> Seq.toList
+
+                    let graph: UiGraphDto = { nodes = nodes; edges = edges }
+
+                    let! resp = client.PostJsonAsync<UiGraphDto, obj>("api/ui/graphs/eval-once", graph)
+
+                    // ispiši cijeli json response (obj -> string)
+                    setOutput (resp.ToString())
+                with ex ->
+                    setOutput ("RUN ERROR: " + ex.Message)
+            } |> ignore
+        )
 
         // Move dragging + temp connection
         canvas.PointerMoved.Add(fun args ->
@@ -445,7 +502,6 @@ type MainWindow() as this =
                 Canvas.SetTop(b, p.Y - dragOffset.Y)
                 updateAllConnectionsForBlock canvas b
 
-                // update inspector while dragging selected block
                 match selectedBlock with
                 | Some sb when obj.ReferenceEquals(sb, b) ->
                     showInspectorForBlock canvas sb
@@ -459,7 +515,6 @@ type MainWindow() as this =
             | _ -> ()
         )
 
-        // Click empty canvas -> clear selection (+ cancel connect if active)
         canvas.PointerPressed.Add(fun args ->
             if obj.ReferenceEquals(args.Source, canvas) then
                 selectedBlock <- None
