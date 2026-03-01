@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "id": "f27cf5d0daa7445bacd389ef278861e4",
+    "createdAtUtc": "2026-02-22T10:04:32.1313299Z",
+    "updatedAtUtc": "2026-02-22T10:04:32.1313299Z"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "c1",
+        "kind": "constant",
+        "constant": 1,
+        "x": 100,
+        "y": 100
+      },
+      {
+        "id": "c2",
+        "kind": "constant",
+        "constant": 2,
+        "x": 100,
+        "y": 200
+      },
+      {
+        "id": "a1",
+        "kind": "add",
+        "constant": null,
+        "x": 300,
+        "y": 150
+      }
+    ],
+    "edges": [
+      {
+        "fromId": "c1",
+        "toId": "a1",
+        "toPort": 1
+      },
+      {
+        "fromId": "c2",
+        "toId": "a1",
+        "toPort": 2
+      }
+    ]
+  }
+}

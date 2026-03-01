@@ -74,7 +74,6 @@ type MainWindow() as this =
         let host = this.FindControl<StackPanel>("InspectorHost")
         host.Children.Clear()
 
-    // ---------- Inspector UI helpers ----------
     let mkLabel (text: string) =
         let t = TextBlock()
         t.Text <- text
@@ -317,7 +316,6 @@ type MainWindow() as this =
             nextX <- nextX + 30.0
             nextY <- nextY + 30.0
 
-            // double click opens dialog, single click drags
             b.PointerPressed.Add(fun args ->
                 if not args.Handled then
                     selectBlock b
@@ -433,13 +431,11 @@ type MainWindow() as this =
             canvas.Children.Add(b) |> ignore
             selectBlock b
 
-        // Toolbox buttons
         this.FindControl<Button>("BtnConstant").Click.Add(fun _ -> addBlock "constant")
         this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
 
-        // ✅ Ping button => /health
         this.FindControl<Button>("BtnPing").Click.Add(fun _ ->
             task {
                 try
@@ -450,7 +446,6 @@ type MainWindow() as this =
             } |> ignore
         )
 
-        // ✅ Run button => send graph to backend eval-once
         this.FindControl<Button>("BtnRun").Click.Add(fun _ ->
             task {
                 try
@@ -495,13 +490,11 @@ type MainWindow() as this =
                     if not saved.ok then
                         setOutput "SAVE ERROR: backend returned ok=false"
                     else
-                        // 3) choose outputs (for now: last node on canvas, fallback all nodes)
                         let outputs =
                             match nodes |> List.tryLast with
                             | Some last -> [ last.id ]
                             | None -> nodes |> List.map (fun n -> n.id)
 
-                        // 4) RUN saved graph => time series
                         let req : RunSavedRequest =
                             { dt = 0.1
                               steps = 200
@@ -515,7 +508,6 @@ type MainWindow() as this =
                             setOutput ("RUN ERROR: " + String.concat "; " errs)
                         else
                             setOutput $"OK. SavedId={saved.id}. Series={runRes.series.Length}"
-                            // 5) popup plot
                             let owner =
                                 match TopLevel.GetTopLevel(this) with
                                 | :? Window as w -> Some w
@@ -528,7 +520,6 @@ type MainWindow() as this =
             } |> ignore
         )
 
-        // Move dragging + temp connection
         canvas.PointerMoved.Add(fun args ->
             let p = args.GetPosition(canvas)
 

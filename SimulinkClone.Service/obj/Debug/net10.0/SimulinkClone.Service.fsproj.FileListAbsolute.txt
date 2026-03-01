@@ -106,3 +106,4 @@ E:\Avlonia\project\SimulinkClone.Service\obj\Debug\net10.0\SimulinkClone.Service
 E:\Avlonia\project\SimulinkClone.Service\obj\Debug\net10.0\SimulinkClone.Service.genruntimeconfig.cache
 E:\Avlonia\project\SimulinkClone.Service\obj\Debug\net10.0\ref\SimulinkClone.Service.dll
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\f27cf5d0daa7445bacd389ef278861e4.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\eca801b88dfd4bc68faacfc95ce10e14.json

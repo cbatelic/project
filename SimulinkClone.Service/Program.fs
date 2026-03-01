@@ -159,41 +159,150 @@ module Program =
                 None)
         |> Array.toList
 
-    let private runStatelessSeries (g: Graph) (dt: float) (steps: int) (outputs: string list) : IResult =
-        if g.nodes |> List.exists (fun n -> n.kind = Integrator) then
-            Results.BadRequest({| ok = false; errors = [ "Integrator is not supported in /run yet (stateful execution not implemented)." ] |})
-        else
-            let distinctOutputs = outputs |> List.distinct
-            let buffers =
-                distinctOutputs
-                |> List.map (fun id -> id, ResizeArray<SampleDto>())
+    let private getInputsForNode (g: Graph) (nodeId: string) =
+        g.edges
+        |> List.filter (fun e -> e.toId = nodeId)
+        |> List.groupBy (fun e -> e.toPort)
+        |> List.map (fun (p, xs) -> p, (xs.Head).fromId)
+        |> Map.ofList
+
+    let private runStatefulSeries (g: Graph) (dt: float) (steps: int) (outputs: string list) : IResult =
+        let distinctOutputs = outputs |> List.distinct
+
+        let nodeIds = g.nodes |> List.map (fun n -> n.id) |> Set.ofList
+        match distinctOutputs |> List.tryFind (fun id -> not (nodeIds.Contains id)) with
+        | Some bad ->
+            evalErrorToHttp (EvalError.UnknownOutputNode bad)
+        | None ->
+
+        let mutable state : Map<string, float> =
+            g.nodes
+            |> List.choose (fun n ->
+                if n.kind = Integrator then
+                    Some (n.id, n.constant |> Option.defaultValue 0.0)
+                else None)
+            |> Map.ofList
+
+        let buffers =
+            distinctOutputs
+            |> List.map (fun id -> id, ResizeArray<SampleDto>())
+            |> Map.ofList
+
+        let tryGetValue (values: Map<string, float>) (id: string) =
+            if values.ContainsKey id then Some values[id]
+            elif state.ContainsKey id then Some state[id]
+            else None
+
+        let evalAllNodesOnce () : EvalResult<Map<string, float>> =
+            let mutable values : Map<string, float> =
+                g.nodes
+                |> List.choose (fun n ->
+                    match n.kind with
+                    | Constant ->
+                        Some (n.id, n.constant |> Option.defaultValue 0.0)
+                    | Integrator ->
+                        Some (n.id, state |> Map.tryFind n.id |> Option.defaultValue 0.0)
+                    | Add ->
+                        None)
                 |> Map.ofList
 
-            let mutable fail : IResult option = None
+            let addNodes = g.nodes |> List.filter (fun n -> n.kind = Add)
 
-            for k in 0 .. (steps - 1) do
-                if fail.IsNone then
-                    let t = float k * dt
+            let mutable remaining = addNodes
+            let mutable progressed = true
 
-                    match GraphEngine.evalOnce g with
-                    | EvalResult.Ok values ->
-                        for id in distinctOutputs do
-                            let v = if values.ContainsKey id then values[id] else nan
-                            buffers[id].Add({ t = t; value = v })
+            while progressed && not remaining.IsEmpty do
+                progressed <- false
 
-                    | EvalResult.Error e ->
-                        fail <- Some (evalErrorToHttp e)
+                let still =
+                    remaining
+                    |> List.filter (fun n ->
+                        let ins = getInputsForNode g n.id
+                        let in1Id = ins |> Map.tryFind 1
+                        let in2Id = ins |> Map.tryFind 2
 
-            match fail with
-            | Some err -> err
-            | None ->
-                let series =
-                    buffers
-                    |> Map.toList
-                    |> List.map (fun (id, xs) -> {| id = id; samples = List.ofSeq xs |})
+                        match in1Id, in2Id with
+                        | Some a, Some b ->
+                            match tryGetValue values a, tryGetValue values b with
+                            | Some va, Some vb ->
+                                values <- values.Add(n.id, va + vb)
+                                progressed <- true
+                                false
+                            | _ -> true
+                        | _ -> true)
 
-                Results.Ok({| ok = true; series = series |})
+                remaining <- still
 
+            if not remaining.IsEmpty then
+                let n = remaining.Head
+                let ins = getInputsForNode g n.id
+                if not (ins.ContainsKey 1) then
+                    EvalResult.Error (EvalError.MissingInput(n.id, In1))
+                elif not (ins.ContainsKey 2) then
+                    EvalResult.Error (EvalError.MissingInput(n.id, In2))
+                else
+                    EvalResult.Error (EvalError.GraphInvalid [ $"Cannot resolve node '{n.id}' (dependency chain missing)." ])
+            else
+                EvalResult.Ok values
+
+        let updateIntegratorStates (values: Map<string, float>) : EvalResult<unit> =
+            let integrators = g.nodes |> List.filter (fun n -> n.kind = Integrator)
+
+            let mutable err : EvalError option = None
+
+            for n in integrators do
+                if err.IsNone then
+                    let ins = getInputsForNode g n.id
+                    match ins |> Map.tryFind 1 with
+                    | None ->
+                        err <- Some (EvalError.MissingInput(n.id, In1))
+                    | Some fromId ->
+                        match tryGetValue values fromId with
+                        | None ->
+                            err <- Some (EvalError.MissingInput(n.id, In1))
+                        | Some u ->
+                            let x = state |> Map.tryFind n.id |> Option.defaultValue 0.0
+                            let xNext = x + dt * u
+                            state <- state.Add(n.id, xNext)
+
+            match err with
+            | Some e -> EvalResult.Error e
+            | None -> EvalResult.Ok ()
+
+        let mutable fail : IResult option = None
+
+        for k in 0 .. (steps - 1) do
+            if fail.IsNone then
+                let t = float k * dt
+
+                match evalAllNodesOnce () with
+                | EvalResult.Error e ->
+                    fail <- Some (evalErrorToHttp e)
+
+                | EvalResult.Ok values ->
+                    // record outputs
+                    for id in distinctOutputs do
+                        let v =
+                            match tryGetValue values id with
+                            | Some x -> x
+                            | None -> nan
+                        buffers[id].Add({ t = t; value = v })
+
+                    // update integrators for next step
+                    match updateIntegratorStates values with
+                    | EvalResult.Error e -> fail <- Some (evalErrorToHttp e)
+                    | EvalResult.Ok () -> ()
+
+        match fail with
+        | Some err -> err
+        | None ->
+            let series =
+                buffers
+                |> Map.toList
+                |> List.map (fun (id, xs) -> {| id = id; samples = List.ofSeq xs |})
+
+            Results.Ok({| ok = true; series = series |})
+    
     [<EntryPoint>]
     let main args =
 
@@ -323,7 +432,7 @@ module Program =
                             if not v.ok then
                                 Results.BadRequest({| ok = false; errors = v.errors |})
                             else
-                                runStatelessSeries coreGraph req.dt req.steps req.outputs
+                                runStatefulSeries coreGraph req.dt req.steps req.outputs
             )
         ) |> ignore
         
