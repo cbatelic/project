@@ -487,6 +487,42 @@ type MainWindow() as this =
 
                     // ispiši cijeli json response (obj -> string)
                     setOutput (resp.ToString())
+                    
+                                // 2) SAVE graph => get id
+                    let! saved =
+                        client.PostJsonAsync<UiGraphDto, SaveGraphResponse>("api/ui/graphs", graph)
+
+                    if not saved.ok then
+                        setOutput "SAVE ERROR: backend returned ok=false"
+                    else
+                        // 3) choose outputs (for now: last node on canvas, fallback all nodes)
+                        let outputs =
+                            match nodes |> List.tryLast with
+                            | Some last -> [ last.id ]
+                            | None -> nodes |> List.map (fun n -> n.id)
+
+                        // 4) RUN saved graph => time series
+                        let req : RunSavedRequest =
+                            { dt = 0.1
+                              steps = 200
+                              outputs = outputs }
+
+                        let url = $"api/ui/graphs/{saved.id}/run"
+                        let! runRes = client.PostJsonAsync<RunSavedRequest, RunResponse>(url, req)
+
+                        if not runRes.ok then
+                            let errs = runRes.errors |> Option.defaultValue []
+                            setOutput ("RUN ERROR: " + String.concat "; " errs)
+                        else
+                            setOutput $"OK. SavedId={saved.id}. Series={runRes.series.Length}"
+                            // 5) popup plot
+                            let owner =
+                                match TopLevel.GetTopLevel(this) with
+                                | :? Window as w -> Some w
+                                | _ -> None
+
+                            PlotWindow.show(owner, "Simulation", runRes.series)
+
                 with ex ->
                     setOutput ("RUN ERROR: " + ex.Message)
             } |> ignore

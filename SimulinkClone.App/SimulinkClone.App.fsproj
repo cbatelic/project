@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Api\UiDtos.fs" />
     <Compile Include="Api\ServiceClient.fs" />
+    <Compile Include="Api\PlotWindow.fs" />
 
     <Compile Include="Controls\BlockControl.axaml.fs" />
     <Compile Include="MainWindow.axaml.fs" />
