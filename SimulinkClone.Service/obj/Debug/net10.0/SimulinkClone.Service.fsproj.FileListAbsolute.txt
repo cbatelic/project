@@ -107,3 +107,8 @@ E:\Avlonia\project\SimulinkClone.Service\obj\Debug\net10.0\SimulinkClone.Service
 E:\Avlonia\project\SimulinkClone.Service\obj\Debug\net10.0\ref\SimulinkClone.Service.dll
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\f27cf5d0daa7445bacd389ef278861e4.json
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\eca801b88dfd4bc68faacfc95ce10e14.json
+E:\Avlonia\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\6c80afcc871e48e7b8994e8edadd6759.json
+E:\Avlonia\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\eca801b88dfd4bc68faacfc95ce10e14.json
+E:\Avlonia\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\f27cf5d0daa7445bacd389ef278861e4.json
+E:\Avlonia\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\cca1f86fd84e4af9b76d4299316d69a7.json
+E:\Avlonia\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\f74cce6d40f34473b9e6e6532ae24fb8.json

@@ -454,13 +454,16 @@ type MainWindow() as this =
                         |> Seq.choose (fun c ->
                             match c with
                             | :? BlockControl as b ->
-                                Some {
-                                    id = b.NodeId
-                                    kind = b.Kind
-                                    constant = b.Constant
-                                    x = Canvas.GetLeft(b)
-                                    y = Canvas.GetTop(b)
-                                }
+                                Some
+                                    { id = b.NodeId
+                                      kind = b.Kind
+                                      constant =
+                                        match (kindOf b) with
+                                        | "constant" -> b.Constant
+                                        | "integrator" -> b.IntegratorInitial
+                                        | _ -> None
+                                      x = Canvas.GetLeft(b)
+                                      y = Canvas.GetTop(b) }
                             | _ -> None)
                         |> Seq.toList
 
@@ -478,42 +481,43 @@ type MainWindow() as this =
 
                     let graph: UiGraphDto = { nodes = nodes; edges = edges }
 
-                    let! resp = client.PostJsonAsync<UiGraphDto, obj>("api/ui/graphs/eval-once", graph)
-
-                    // ispiši cijeli json response (obj -> string)
-                    setOutput (resp.ToString())
-                    
-                                // 2) SAVE graph => get id
+                    // 1) save graph
                     let! saved =
                         client.PostJsonAsync<UiGraphDto, SaveGraphResponse>("api/ui/graphs", graph)
 
                     if not saved.ok then
                         setOutput "SAVE ERROR: backend returned ok=false"
                     else
+                        // 2) output preference: integrator > add > constant
                         let outputs =
-                            match nodes |> List.tryLast with
-                            | Some last -> [ last.id ]
-                            | None -> nodes |> List.map (fun n -> n.id)
+                            let byKind k =
+                                nodes
+                                |> List.filter (fun n -> (if isNull n.kind then "" else n.kind.Trim().ToLowerInvariant()) = k)
+                                |> List.map (fun n -> n.id)
 
-                        let req : RunSavedRequest =
+                            let integrators = byKind "integrator"
+                            if integrators.Length > 0 then integrators
+                            else
+                                let adds = byKind "add"
+                                if adds.Length > 0 then adds
+                                else byKind "constant"
+
+                        let req: RunSavedRequest =
                             { dt = 0.1
                               steps = 200
                               outputs = outputs }
 
-                        let url = $"api/ui/graphs/{saved.id}/run"
+                        let url = sprintf "api/ui/graphs/%s/run" saved.id
                         let! runRes = client.PostJsonAsync<RunSavedRequest, RunResponse>(url, req)
 
-                        if not runRes.ok then
-                            let errs = runRes.errors |> Option.defaultValue []
-                            setOutput ("RUN ERROR: " + String.concat "; " errs)
-                        else
-                            setOutput $"OK. SavedId={saved.id}. Series={runRes.series.Length}"
-                            let owner =
-                                match TopLevel.GetTopLevel(this) with
-                                | :? Window as w -> Some w
-                                | _ -> None
+                        setOutput (sprintf "OK. SavedId=%s. Series=%d" saved.id runRes.series.Length)
 
-                            PlotWindow.show(owner, "Simulation", runRes.series)
+                        let owner =
+                            match TopLevel.GetTopLevel(this) with
+                            | :? Window as w -> Some w
+                            | _ -> None
+
+                        PlotWindow.show(owner, "Simulation", runRes.series)
 
                 with ex ->
                     setOutput ("RUN ERROR: " + ex.Message)
