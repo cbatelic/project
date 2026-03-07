@@ -253,7 +253,11 @@ module Program =
             for n in integrators do
                 if err.IsNone then
                     let ins = getInputsForNode g n.id
-                    match ins |> Map.tryFind 1 with
+                    let input =
+                        ins |> Map.tryFind 1
+                        |> Option.orElse (ins |> Map.tryFind 2)
+
+                    match input with
                     | None ->
                         err <- Some (EvalError.MissingInput(n.id, In1))
                     | Some fromId ->
