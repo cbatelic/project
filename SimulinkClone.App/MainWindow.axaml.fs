@@ -162,7 +162,6 @@ type MainWindow() as this =
         | _ ->
             host.Children.Add(mkMuted "Nema UI definiran za ovaj blok još.") |> ignore
 
-    // ---------- Geometry helpers ----------
     let getOutputPortPosition (block: BlockControl) (canvas: Canvas) =
         let port = block.FindControl<Border>("OutputPort")
         port.TranslatePoint(Point(6, 6), canvas).Value
@@ -338,7 +337,6 @@ type MainWindow() as this =
                     args.Pointer.Capture(null) |> ignore
             )
 
-            // connect logic
             b.OutputPortClicked.Add(fun src ->
                 cancelConnect canvas
                 sourceOutput <- Some { Block = src; Input = None }
@@ -481,26 +479,15 @@ type MainWindow() as this =
 
                     let graph: UiGraphDto = { nodes = nodes; edges = edges }
 
-                    // 1) save graph
                     let! saved =
                         client.PostJsonAsync<UiGraphDto, SaveGraphResponse>("api/ui/graphs", graph)
 
                     if not saved.ok then
                         setOutput "SAVE ERROR: backend returned ok=false"
                     else
-                        // 2) output preference: integrator > add > constant
+                        // ✅ vrati sve serije, ne samo jednu
                         let outputs =
-                            let byKind k =
-                                nodes
-                                |> List.filter (fun n -> (if isNull n.kind then "" else n.kind.Trim().ToLowerInvariant()) = k)
-                                |> List.map (fun n -> n.id)
-
-                            let integrators = byKind "integrator"
-                            if integrators.Length > 0 then integrators
-                            else
-                                let adds = byKind "add"
-                                if adds.Length > 0 then adds
-                                else byKind "constant"
+                            nodes |> List.map (fun n -> n.id)
 
                         let req: RunSavedRequest =
                             { dt = 0.1
@@ -517,7 +504,7 @@ type MainWindow() as this =
                             | :? Window as w -> Some w
                             | _ -> None
 
-                        PlotWindow.show(owner, "Simulation", runRes.series)
+                        PlotWindow.show owner "Simulation" runRes.series
 
                 with ex ->
                     setOutput ("RUN ERROR: " + ex.Message)

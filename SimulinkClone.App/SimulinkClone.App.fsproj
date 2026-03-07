@@ -8,12 +8,13 @@
 
   <ItemGroup>
     <Compile Include="Api\UiDtos.fs" />
-    <Compile Include="Api\ServiceClient.fs" />
-    <Compile Include="Api\PlotWindow.fs" />
     <Compile Include="Api\RunDtos.fs" />
+    <Compile Include="Api\ServiceClient.fs" />
 
     <Compile Include="Controls\BlockControl.axaml.fs" />
+    <Compile Include="PlotWindow.fs" />
     <Compile Include="MainWindow.axaml.fs" />
+
     <Compile Include="App.axaml.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
@@ -32,5 +33,4 @@
   <ItemGroup>
     <ProjectReference Include="..\SimulinkClone.Core\SimulinkClone.Core.fsproj" />
   </ItemGroup>
-
 </Project>
