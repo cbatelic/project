@@ -97,6 +97,7 @@ type BlockControl() as this =
             | "add" -> "Add"
             | "integrator" -> "Integrator"
             | "constraint" -> "Constraint"
+            | "gain" -> "Gain"
             | other when other.Length > 0 -> other
             | _ -> "Block"
 
@@ -111,6 +112,10 @@ type BlockControl() as this =
                 match integratorInitial with
                 | Some v -> sprintf "x0 = %s" (fmt v)
                 | None -> "x0 = ?"
+            | "gain" ->
+                match constantValue with
+                | Some v -> sprintf "k = %s" (fmt v)
+                | None -> "k = ?"
             | "add" ->
                 "" // summation shows no param for now
             | "constraint" ->
@@ -124,7 +129,7 @@ type BlockControl() as this =
     let openParamDialog () =
         let k = normalizeKind kind
 
-        if k <> "constant" && k <> "integrator" then
+        if k <> "constant" && k <> "integrator" && k <> "gain" then
             ()
         else
             let win = Window()
@@ -133,8 +138,10 @@ type BlockControl() as this =
             win.CanResize <- false
             win.WindowStartupLocation <- WindowStartupLocation.CenterOwner
             win.Background <- SolidColorBrush(Color.Parse("#1f1f1f"))
-            win.Title <- if k = "constant" then "Edit Constant" else "Edit Integrator initial"
-
+            win.Title <-
+                if k = "constant" then "Edit Constant"
+                elif k = "gain" then "Edit Gain"
+                else "Edit Integrator initial"
             let root = StackPanel()
             root.Spacing <- 10.0
             root.Margin <- Thickness(14.0)
@@ -143,8 +150,11 @@ type BlockControl() as this =
             hint.Text <-
                 if k = "constant" then
                     "Enter constant value (use dot for decimals, e.g. 3.5)"
+                elif k = "gain" then
+                    "Enter gain factor k (use dot for decimals, e.g. 2.5)"
                 else
                     "Enter integrator initial value x0 (use dot for decimals, e.g. 0.0)"
+            
             hint.TextWrapping <- TextWrapping.Wrap
             hint.Foreground <- Brushes.White
 
@@ -152,11 +162,10 @@ type BlockControl() as this =
             tb.Height <- 32.0
             tb.Watermark <- "number"
             tb.Text <-
-                if k = "constant" then
+                if k = "constant" || k = "gain" then
                     (constantValue |> Option.defaultValue 0.0).ToString(Globalization.CultureInfo.InvariantCulture)
                 else
                     (integratorInitial |> Option.defaultValue 0.0).ToString(Globalization.CultureInfo.InvariantCulture)
-
             let err = TextBlock()
             err.Text <- ""
             err.Foreground <- Brushes.OrangeRed
@@ -191,9 +200,9 @@ type BlockControl() as this =
                 | None ->
                     err.Text <- "Invalid number. Use dot for decimals (e.g. 3.5)."
                 | Some v ->
-                    if k = "constant" then constantValue <- Some v
+                    if k = "constant" || k = "gain" then constantValue <- Some v
                     else integratorInitial <- Some v
-                    refreshText ()
+                    refreshText()
                     win.Close()
 
             btnOk.Click.Add(fun _ -> apply ())

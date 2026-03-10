@@ -87,6 +87,7 @@ module Program =
         | "constant" -> Some Constant
         | "add" -> Some Add
         | "integrator" -> Some Integrator
+        | "gain" -> Some Gain
         | _ -> None
 
     let private uiToCoreGraph (dto: UiGraphDto) : Graph * string list =
@@ -202,13 +203,16 @@ module Program =
                         Some (n.id, n.constant |> Option.defaultValue 0.0)
                     | Integrator ->
                         Some (n.id, state |> Map.tryFind n.id |> Option.defaultValue 0.0)
-                    | Add ->
+                    | Add
+                    | Gain ->
                         None)
                 |> Map.ofList
 
-            let addNodes = g.nodes |> List.filter (fun n -> n.kind = Add)
+            let pending =
+                g.nodes
+                |> List.filter (fun n -> n.kind = Add || n.kind = Gain)
 
-            let mutable remaining = addNodes
+            let mutable remaining = pending
             let mutable progressed = true
 
             while progressed && not remaining.IsEmpty do
@@ -218,33 +222,68 @@ module Program =
                     remaining
                     |> List.filter (fun n ->
                         let ins = getInputsForNode g n.id
-                        let in1Id = ins |> Map.tryFind 1
-                        let in2Id = ins |> Map.tryFind 2
 
-                        match in1Id, in2Id with
-                        | Some a, Some b ->
-                            match tryGetValue values a, tryGetValue values b with
-                            | Some va, Some vb ->
-                                values <- values.Add(n.id, va + vb)
-                                progressed <- true
-                                false
+                        match n.kind with
+                        | Add ->
+                            let in1Id = ins |> Map.tryFind 1
+                            let in2Id = ins |> Map.tryFind 2
+
+                            match in1Id, in2Id with
+                            | Some a, Some b ->
+                                match tryGetValue values a, tryGetValue values b with
+                                | Some va, Some vb ->
+                                    values <- values.Add(n.id, va + vb)
+                                    progressed <- true
+                                    false
+                                | _ -> true
                             | _ -> true
-                        | _ -> true)
+
+                        | Gain ->
+                            let inputId =
+                                ins |> Map.tryFind 1
+                                |> Option.orElse (ins |> Map.tryFind 2)
+
+                            match inputId with
+                            | Some src ->
+                                match tryGetValue values src with
+                                | Some u ->
+                                    let k = n.constant |> Option.defaultValue 1.0
+                                    values <- values.Add(n.id, k * u)
+                                    progressed <- true
+                                    false
+                                | None -> true
+                            | None -> true
+
+                        | _ ->
+                            false)
 
                 remaining <- still
 
             if not remaining.IsEmpty then
                 let n = remaining.Head
                 let ins = getInputsForNode g n.id
-                if not (ins.ContainsKey 1) then
-                    EvalResult.Error (EvalError.MissingInput(n.id, In1))
-                elif not (ins.ContainsKey 2) then
-                    EvalResult.Error (EvalError.MissingInput(n.id, In2))
-                else
-                    EvalResult.Error (EvalError.GraphInvalid [ $"Cannot resolve node '{n.id}' (dependency chain missing)." ])
+
+                match n.kind with
+                | Add ->
+                    if not (ins.ContainsKey 1) then
+                        EvalResult.Error (EvalError.MissingInput(n.id, In1))
+                    elif not (ins.ContainsKey 2) then
+                        EvalResult.Error (EvalError.MissingInput(n.id, In2))
+                    else
+                        EvalResult.Error (EvalError.GraphInvalid [ $"Cannot resolve node '{n.id}' (dependency chain missing)." ])
+
+                | Gain ->
+                    if not (ins.ContainsKey 1) && not (ins.ContainsKey 2) then
+                        EvalResult.Error (EvalError.MissingInput(n.id, In1))
+                    else
+                        EvalResult.Error (EvalError.GraphInvalid [ $"Cannot resolve node '{n.id}' (dependency chain missing)." ])
+
+                | _ ->
+                    EvalResult.Error (EvalError.GraphInvalid [ $"Cannot resolve node '{n.id}'." ])
             else
                 EvalResult.Ok values
-
+                
+                
         let updateIntegratorStates (values: Map<string, float>) : EvalResult<unit> =
             let integrators = g.nodes |> List.filter (fun n -> n.kind = Integrator)
 

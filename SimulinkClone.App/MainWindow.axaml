@@ -16,6 +16,7 @@
                 <Button Name="BtnAdd" Content="Summation (Add)" />
                 <Button Name="BtnIntegrator" Content="Integrator" />
                 <Button Name="BtnConstraint" Content="Constraint" />
+                <Button Name="BtnGain" Content="Gain" />
 
                 <Separator Margin="0,6,0,6"/>
 

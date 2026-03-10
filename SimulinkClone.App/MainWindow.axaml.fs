@@ -159,6 +159,15 @@ type MainWindow() as this =
             host.Children.Add(mkRow "Max" "-") |> ignore
             host.Children.Add(mkMuted "Kasnije: Min/Max polja + validacija.") |> ignore
 
+        | "gain" ->
+            host.Children.Add(mkLabel "Gain") |> ignore
+            let kTxt =
+                match b.Constant with
+                | Some v -> sprintf "%g" v
+                | None -> "-"
+            host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
+            host.Children.Add(mkMuted "Double-click block to edit gain.") |> ignore
+    
         | _ ->
             host.Children.Add(mkMuted "Nema UI definiran za ovaj blok još.") |> ignore
 
@@ -307,6 +316,10 @@ type MainWindow() as this =
                 b.SetTitle("Constraint")
                 b.Constant <- None
                 b.IntegratorInitial <- None
+            | "gain" ->
+                b.SetTitle("Gain")
+                b.Constant <- Some 1.0
+                b.IntegratorInitial <- None
             | _ ->
                 b.SetTitle(kind)
 
@@ -433,6 +446,7 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
+        this.FindControl<Button>("BtnGain").Click.Add(fun _ -> addBlock "gain")
 
         this.FindControl<Button>("BtnPing").Click.Add(fun _ ->
             task {
@@ -456,8 +470,9 @@ type MainWindow() as this =
                                     { id = b.NodeId
                                       kind = b.Kind
                                       constant =
-                                        match (kindOf b) with
+                                        match kindOf b with
                                         | "constant" -> b.Constant
+                                        | "gain" -> b.Constant
                                         | "integrator" -> b.IntegratorInitial
                                         | _ -> None
                                       x = Canvas.GetLeft(b)

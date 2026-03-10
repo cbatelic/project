@@ -12,6 +12,7 @@ type BlockKind =
     | Constant
     | Add
     | Integrator
+    | Gain
 
 type Node =
     { id: NodeId
