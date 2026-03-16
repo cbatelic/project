@@ -51,6 +51,27 @@ type GraphListItemDto =
       updatedAtUtc: DateTime
       nodeCount: int
       edgeCount: int }
+    
+type ConstraintUiBlockDto =
+    { id: string
+      kind: string
+      constantValue: float option }
+
+type ConstraintUiWireDto =
+    { fromBlockId: string
+      fromTerminal: string
+      toBlockId: string
+      toTerminal: string }
+
+type ConstraintUiKnownValueDto =
+    { blockId: string
+      terminal: string
+      value: float }
+
+type ConstraintUiGraphDto =
+    { blocks: ConstraintUiBlockDto list
+      wires: ConstraintUiWireDto list
+      knownValues: ConstraintUiKnownValueDto list }
 
 module Program =
 
@@ -89,6 +110,98 @@ module Program =
         | "integrator" -> Some Integrator
         | "gain" -> Some Gain
         | _ -> None
+        
+    let private parseConstraintKind (s: string) : ConstraintBlockKind option =
+        match (if isNull s then "" else s).Trim().ToLowerInvariant() with
+        | "constant" -> Some ConstraintBlockKind.Constant
+        | "add" -> Some ConstraintBlockKind.Add
+        | "subtract" -> Some ConstraintBlockKind.Subtract
+        | "multiply" -> Some ConstraintBlockKind.Multiply
+        | "gain" -> Some ConstraintBlockKind.Gain
+        | _ -> None
+
+    let private terminalsForConstraintKind =
+        function
+        | ConstraintBlockKind.Constant ->
+            [ { Name = "Result" } ]
+
+        | ConstraintBlockKind.Gain ->
+            [ { Name = "A" }
+              { Name = "Result" } ]
+
+        | ConstraintBlockKind.Add
+        | ConstraintBlockKind.Subtract
+        | ConstraintBlockKind.Multiply ->
+            [ { Name = "A" }
+              { Name = "B" }
+              { Name = "Result" } ]
+            
+    let private uiToConstraintGraph (dto: ConstraintUiGraphDto) : ConstraintGraph * string list =
+        let errors = ResizeArray<string>()
+
+        if isNull (box dto) then
+            ({ Blocks = []; Wires = []; KnownValues = [] }, [ "Request body is null." ])
+        else
+
+        let blocksDto =
+            if isNull (box dto.blocks) then [] else dto.blocks
+
+        let wiresDto =
+            if isNull (box dto.wires) then [] else dto.wires
+
+        let knownValuesDto =
+            if isNull (box dto.knownValues) then [] else dto.knownValues
+
+        let blocks : ConstraintBlock list =
+            blocksDto
+            |> List.choose (fun b ->
+                let id = if isNull b.id then "" else b.id
+                let kindText = if isNull b.kind then "" else b.kind
+
+                match parseConstraintKind kindText with
+                | None ->
+                    errors.Add($"Unknown constraint block kind '{kindText}' for block '{id}'.")
+                    None
+                | Some kind ->
+                    Some
+                        { Id = id
+                          Kind = kind
+                          ConstantValue = b.constantValue
+                          Terminals = terminalsForConstraintKind kind })
+
+        let wires : ConstraintWire list =
+            wiresDto
+            |> List.map (fun w ->
+                { FromRef =
+                    { BlockId = if isNull w.fromBlockId then "" else w.fromBlockId
+                      Terminal = if isNull w.fromTerminal then "" else w.fromTerminal }
+                  ToRef =
+                    { BlockId = if isNull w.toBlockId then "" else w.toBlockId
+                      Terminal = if isNull w.toTerminal then "" else w.toTerminal } })
+
+        let knownValues : KnownTerminalValue list =
+            knownValuesDto
+            |> List.map (fun kv ->
+                { Ref =
+                    { BlockId = if isNull kv.blockId then "" else kv.blockId
+                      Terminal = if isNull kv.terminal then "" else kv.terminal }
+                  Value = kv.value })
+
+        ({ Blocks = blocks
+           Wires = wires
+           KnownValues = knownValues },
+         List.ofSeq errors)
+        
+    let private constraintValueToObj =
+        function
+        | ConstraintRuntime.Known v -> box v
+        | ConstraintRuntime.Unknown -> null
+
+    let private constraintStatusToString =
+        function
+        | ConstraintRuntime.Ok -> "OK"
+        | ConstraintRuntime.Underdetermined -> "Underdetermined"
+        | ConstraintRuntime.Error -> "Error"
 
     let private uiToCoreGraph (dto: UiGraphDto) : Graph * string list =
         let errors = ResizeArray<string>()
@@ -480,6 +593,55 @@ module Program =
         ) |> ignore
         
         app.MapGet("/debug/cwd", Func<string>(fun () -> Directory.GetCurrentDirectory())) |> ignore
+        
+        app.MapPost(
+            "/api/constraint/validate",
+            Func<ConstraintUiGraphDto, IResult>(fun ui ->
+                let graph, parseErrors = uiToConstraintGraph ui
+
+                if not parseErrors.IsEmpty then
+                    Results.BadRequest({| ok = false; errors = parseErrors |})
+                else
+                    let validation = ConstraintGraphValidation.validate graph
+                    if validation.Ok then
+                        Results.Ok({| ok = true |})
+                    else
+                        Results.BadRequest({| ok = false; errors = validation.Errors |})
+            )
+        ) |> ignore
+        
+        app.MapPost(
+            "/api/constraint/run",
+            Func<ConstraintUiGraphDto, IResult>(fun ui ->
+                let graph, parseErrors = uiToConstraintGraph ui
+
+                if not parseErrors.IsEmpty then
+                    Results.BadRequest({| ok = false; errors = parseErrors |})
+                else
+                    let validation = ConstraintGraphValidation.validate graph
+
+                    if not validation.Ok then
+                        Results.BadRequest({| ok = false; errors = validation.Errors |})
+                    else
+                        let result = ConstraintRuntime.solve graph
+
+                        let blocks =
+                            result.Blocks
+                            |> List.map (fun b ->
+                                let terminals =
+                                    b.Values
+                                    |> Map.toList
+                                    |> List.map (fun (name, value) ->
+                                        {| name = name
+                                           value = constraintValueToObj value |})
+
+                                {| id = b.Block.Id
+                                   status = constraintStatusToString b.Status
+                                   terminals = terminals |})
+
+                        Results.Ok({| ok = true; blocks = blocks |})
+            )
+        ) |> ignore
 
         app.Run()
         0

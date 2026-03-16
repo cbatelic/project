@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "id": "ee29714b335747e286ba35a93d0379b7",
+    "createdAtUtc": "2026-03-07T12:19:35.9244817Z",
+    "updatedAtUtc": "2026-03-07T12:19:35.9244817Z"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "0d11e5545ea94efd8a124ef6282d798c",
+        "kind": "constant",
+        "constant": 3,
+        "x": 80,
+        "y": 77
+      },
+      {
+        "id": "85f62bd809c243b6bfa2c4800fe6597c",
+        "kind": "constant",
+        "constant": 4,
+        "x": 82,
+        "y": 259
+      },
+      {
+        "id": "44c93aa0639d4992b9dbfc6a169c685b",
+        "kind": "add",
+        "constant": null,
+        "x": 313,
+        "y": 166
+      },
+      {
+        "id": "64b0f63cd3994aecb326a7db73386442",
+        "kind": "integrator",
+        "constant": 0,
+        "x": 541,
+        "y": 176
+      }
+    ],
+    "edges": [
+      {
+        "fromId": "0d11e5545ea94efd8a124ef6282d798c",
+        "toId": "44c93aa0639d4992b9dbfc6a169c685b",
+        "toPort": 1
+      },
+      {
+        "fromId": "85f62bd809c243b6bfa2c4800fe6597c",
+        "toId": "44c93aa0639d4992b9dbfc6a169c685b",
+        "toPort": 2
+      },
+      {
+        "fromId": "44c93aa0639d4992b9dbfc6a169c685b",
+        "toId": "64b0f63cd3994aecb326a7db73386442",
+        "toPort": 1
+      }
+    ]
+  }
+}

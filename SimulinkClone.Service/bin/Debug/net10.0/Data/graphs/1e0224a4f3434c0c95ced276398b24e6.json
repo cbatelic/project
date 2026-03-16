@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "id": "1e0224a4f3434c0c95ced276398b24e6",
+    "createdAtUtc": "2026-03-07T12:17:16.3952611Z",
+    "updatedAtUtc": "2026-03-07T12:17:16.3952611Z"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "1c4564f0258b43e99297c8d571cf4a18",
+        "kind": "constant",
+        "constant": 1,
+        "x": 60,
+        "y": 60
+      },
+      {
+        "id": "9cc9d5ddbd414c1eab16c81b0325d0b2",
+        "kind": "constant",
+        "constant": 3,
+        "x": 69,
+        "y": 222
+      },
+      {
+        "id": "9b34bb77e4af44089f14b11e368e40ab",
+        "kind": "add",
+        "constant": null,
+        "x": 321,
+        "y": 155
+      },
+      {
+        "id": "a9bf314dd1a34626938b29defde77f71",
+        "kind": "integrator",
+        "constant": 0,
+        "x": 587,
+        "y": 153
+      }
+    ],
+    "edges": [
+      {
+        "fromId": "1c4564f0258b43e99297c8d571cf4a18",
+        "toId": "9b34bb77e4af44089f14b11e368e40ab",
+        "toPort": 1
+      },
+      {
+        "fromId": "9cc9d5ddbd414c1eab16c81b0325d0b2",
+        "toId": "9b34bb77e4af44089f14b11e368e40ab",
+        "toPort": 2
+      },
+      {
+        "fromId": "9b34bb77e4af44089f14b11e368e40ab",
+        "toId": "a9bf314dd1a34626938b29defde77f71",
+        "toPort": 1
+      }
+    ]
+  }
+}

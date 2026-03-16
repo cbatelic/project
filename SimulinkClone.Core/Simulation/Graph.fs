@@ -13,11 +13,13 @@ type BlockKind =
     | Add
     | Integrator
     | Gain
+    | Subtract
+    | Multiply
 
 type Node =
     { id: NodeId
       kind: BlockKind
-      constant: float option } 
+      constant: float option }
 
 type Edge =
     { fromId: NodeId
@@ -55,7 +57,7 @@ module Graph =
         | CycleDetected ids ->
             let path = String.Join(" -> ", ids)
             $"Cycle detected: {path}."
-        | MissingConstantValue id -> $"Constant node '{id}' is missing 'constant' value."
+        | MissingConstantValue id -> $"Constant/Gain node '{id}' is missing 'constant' value."
 
     let private toPort (p: int) =
         match p with
@@ -77,7 +79,7 @@ module Graph =
         let nodeIds = g.nodes |> List.map (fun n -> n.id) |> Set.ofList
 
         for n in g.nodes do
-            if n.kind = Constant && n.constant.IsNone then
+            if (n.kind = Constant || n.kind = Gain) && n.constant.IsNone then
                 errors.Add(MissingConstantValue n.id)
 
         for e in g.edges do

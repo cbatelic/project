@@ -11,6 +11,14 @@
     <Compile Include="Simulation\Engine.fs" />
     <Compile Include="Simulation\Graph.fs" />
     <Compile Include="Simulation\GraphEngine.fs" />
+
+    <Compile Include="Simulation\ConstraintSolver.fs" />
+    <Compile Include="Simulation\ConstraintGraphAdapter.fs" />
+    <Compile Include="Simulation\ConstraintGraphSolver.fs" />
+
+    <Compile Include="Simulation\ConstraintModel.fs" />
+    <Compile Include="Simulation\ConstraintGraphValidation.fs" />
+    <Compile Include="Simulation\ConstraintRuntime.fs" />
   </ItemGroup>
 
 </Project>
