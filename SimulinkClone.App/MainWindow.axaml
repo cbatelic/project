@@ -22,6 +22,8 @@
 
                 <Separator Margin="0,6,0,6"/>
                 <Button Name="BtnConstraintRun" Content="Run Constraint" />
+                <Button Name="BtnSaveConstraint" Content="Save Constraint" />
+                <Button Name="BtnListConstraints" Content="List Constraints" />
 
                 <Button x:Name="BtnPing" Content="Ping Service (/health)" Width="200"/>
 

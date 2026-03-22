@@ -316,3 +316,149 @@ let ``Constraint runtime marks block as underdetermined when too many values are
     match sub1.Values.["Result"] with
     | CR.Unknown -> ()
     | CR.Known _ -> failwith "Result should remain unknown"
+    
+[<Fact>]
+let ``Constraint graph validation fails when source terminal is not Result`` () =
+    let graph : ConstraintGraph =
+        { Blocks =
+            [ { Id = "sub1"
+                Kind = ConstraintBlockKind.Subtract
+                ConstantValue = None
+                Terminals = [ { Name = "A" }; { Name = "B" }; { Name = "Result" } ] }
+
+              { Id = "mul1"
+                Kind = ConstraintBlockKind.Multiply
+                ConstantValue = None
+                Terminals = [ { Name = "A" }; { Name = "B" }; { Name = "Result" } ] } ]
+          Wires =
+            [ { FromRef = { BlockId = "sub1"; Terminal = "A" }
+                ToRef = { BlockId = "mul1"; Terminal = "A" } } ]
+          KnownValues = [] }
+
+    let result = CGV.validate graph
+
+    Assert.False(result.Ok)
+    Assert.Contains(result.Errors, fun e -> e.Contains("source terminal must be 'Result'"))
+
+
+[<Fact>]
+let ``Constraint graph validation fails when target terminal is Result`` () =
+    let graph : ConstraintGraph =
+        { Blocks =
+            [ { Id = "c1"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 10.0
+                Terminals = [ { Name = "Result" } ] }
+
+              { Id = "sub1"
+                Kind = ConstraintBlockKind.Subtract
+                ConstantValue = None
+                Terminals = [ { Name = "A" }; { Name = "B" }; { Name = "Result" } ] } ]
+          Wires =
+            [ { FromRef = { BlockId = "c1"; Terminal = "Result" }
+                ToRef = { BlockId = "sub1"; Terminal = "Result" } } ]
+          KnownValues = [] }
+
+    let result = CGV.validate graph
+
+    Assert.False(result.Ok)
+    Assert.Contains(result.Errors, fun e -> e.Contains("target terminal must be an input terminal"))
+
+
+[<Fact>]
+let ``Constraint graph validation fails when constant has incoming wire`` () =
+    let graph : ConstraintGraph =
+        { Blocks =
+            [ { Id = "c1"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 10.0
+                Terminals = [ { Name = "Result" } ] }
+
+              { Id = "c2"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 20.0
+                Terminals = [ { Name = "Result" } ] } ]
+          Wires =
+            [ { FromRef = { BlockId = "c1"; Terminal = "Result" }
+                ToRef = { BlockId = "c2"; Terminal = "A" } } ]
+          KnownValues = [] }
+
+    let result = CGV.validate graph
+
+    Assert.False(result.Ok)
+    Assert.Contains(result.Errors, fun e ->
+        e.Contains("cannot have incoming wires")
+        || e.Contains("unknown terminal")
+    )
+
+
+[<Fact>]
+let ``Constraint graph validation fails when gain receives B terminal`` () =
+    let graph : ConstraintGraph =
+        { Blocks =
+            [ { Id = "c1"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 10.0
+                Terminals = [ { Name = "Result" } ] }
+
+              { Id = "g1"
+                Kind = ConstraintBlockKind.Gain
+                ConstantValue = Some 2.0
+                Terminals = [ { Name = "A" }; { Name = "Result" } ] } ]
+          Wires =
+            [ { FromRef = { BlockId = "c1"; Terminal = "Result" }
+                ToRef = { BlockId = "g1"; Terminal = "B" } } ]
+          KnownValues = [] }
+
+    let result = CGV.validate graph
+
+    Assert.False(result.Ok)
+    Assert.Contains(result.Errors, fun e -> e.Contains("unknown terminal 'B'") || e.Contains("cannot accept terminal 'B'"))
+
+
+[<Fact>]
+let ``Constraint graph validation passes for valid subtract to multiply chain`` () =
+    let graph : ConstraintGraph =
+        { Blocks =
+            [ { Id = "c50"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 50.0
+                Terminals = [ { Name = "Result" } ] }
+
+              { Id = "c18"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 18.0
+                Terminals = [ { Name = "Result" } ] }
+
+              { Id = "sub1"
+                Kind = ConstraintBlockKind.Subtract
+                ConstantValue = None
+                Terminals = [ { Name = "A" }; { Name = "B" }; { Name = "Result" } ] }
+
+              { Id = "c1_8"
+                Kind = ConstraintBlockKind.Constant
+                ConstantValue = Some 1.8
+                Terminals = [ { Name = "Result" } ] }
+
+              { Id = "mul1"
+                Kind = ConstraintBlockKind.Multiply
+                ConstantValue = None
+                Terminals = [ { Name = "A" }; { Name = "B" }; { Name = "Result" } ] } ]
+          Wires =
+            [ { FromRef = { BlockId = "c50"; Terminal = "Result" }
+                ToRef = { BlockId = "sub1"; Terminal = "A" } }
+
+              { FromRef = { BlockId = "c18"; Terminal = "Result" }
+                ToRef = { BlockId = "sub1"; Terminal = "B" } }
+
+              { FromRef = { BlockId = "sub1"; Terminal = "Result" }
+                ToRef = { BlockId = "mul1"; Terminal = "A" } }
+
+              { FromRef = { BlockId = "c1_8"; Terminal = "Result" }
+                ToRef = { BlockId = "mul1"; Terminal = "B" } } ]
+          KnownValues = [] }
+
+    let result = CGV.validate graph
+
+    Assert.True(result.Ok)
+    Assert.Empty(result.Errors)

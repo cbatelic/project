@@ -72,6 +72,23 @@ type ConstraintUiGraphDto =
     { blocks: ConstraintUiBlockDto list
       wires: ConstraintUiWireDto list
       knownValues: ConstraintUiKnownValueDto list }
+    
+type ConstraintGraphMeta =
+    { id: string
+      createdAtUtc: DateTime
+      updatedAtUtc: DateTime }
+
+type StoredConstraintGraph =
+    { meta: ConstraintGraphMeta
+      graph: ConstraintUiGraphDto }
+
+type ConstraintGraphListItemDto =
+    { id: string
+      createdAtUtc: DateTime
+      updatedAtUtc: DateTime
+      blockCount: int
+      wireCount: int
+      knownValueCount: int }
 
 module Program =
 
@@ -85,6 +102,15 @@ module Program =
     let private graphsDir =
         Path.Combine(Directory.GetCurrentDirectory(), "Data", "graphs")
 
+    let private constraintGraphsDir =
+        Path.Combine(Directory.GetCurrentDirectory(), "Data", "constraint-graphs")
+
+    let private ensureConstraintStorage () =
+        Directory.CreateDirectory(constraintGraphsDir) |> ignore
+
+    let private constraintGraphPath (id: string) =
+        Path.Combine(constraintGraphsDir, $"{id}.json")
+        
     let private ensureStorage () =
         Directory.CreateDirectory(graphsDir) |> ignore
 
@@ -137,61 +163,59 @@ module Program =
               { Name = "Result" } ]
             
     let private uiToConstraintGraph (dto: ConstraintUiGraphDto) : ConstraintGraph * string list =
-        let errors = ResizeArray<string>()
-
         if isNull (box dto) then
             ({ Blocks = []; Wires = []; KnownValues = [] }, [ "Request body is null." ])
         else
+            let errors = ResizeArray<string>()
 
-        let blocksDto =
-            if isNull (box dto.blocks) then [] else dto.blocks
+            let blocksDto =
+                if isNull (box dto.blocks) then [] else dto.blocks
 
-        let wiresDto =
-            if isNull (box dto.wires) then [] else dto.wires
+            let wiresDto =
+                if isNull (box dto.wires) then [] else dto.wires
 
-        let knownValuesDto =
-            if isNull (box dto.knownValues) then [] else dto.knownValues
+            let knownValuesDto =
+                if isNull (box dto.knownValues) then [] else dto.knownValues
 
-        let blocks : ConstraintBlock list =
-            blocksDto
-            |> List.choose (fun b ->
-                let id = if isNull b.id then "" else b.id
-                let kindText = if isNull b.kind then "" else b.kind
+            let blocks : ConstraintBlock list =
+                blocksDto
+                |> List.choose (fun b ->
+                    let id = if isNull b.id then "" else b.id
+                    let kindText = if isNull b.kind then "" else b.kind
 
-                match parseConstraintKind kindText with
-                | None ->
-                    errors.Add($"Unknown constraint block kind '{kindText}' for block '{id}'.")
-                    None
-                | Some kind ->
-                    Some
-                        { Id = id
-                          Kind = kind
-                          ConstantValue = b.constantValue
-                          Terminals = terminalsForConstraintKind kind })
+                    match parseConstraintKind kindText with
+                    | None ->
+                        errors.Add($"Unknown constraint block kind '{kindText}' for block '{id}'.")
+                        None
+                    | Some kind ->
+                        Some
+                            { Id = id
+                              Kind = kind
+                              ConstantValue = b.constantValue
+                              Terminals = terminalsForConstraintKind kind })
 
-        let wires : ConstraintWire list =
-            wiresDto
-            |> List.map (fun w ->
-                { FromRef =
-                    { BlockId = if isNull w.fromBlockId then "" else w.fromBlockId
-                      Terminal = if isNull w.fromTerminal then "" else w.fromTerminal }
-                  ToRef =
-                    { BlockId = if isNull w.toBlockId then "" else w.toBlockId
-                      Terminal = if isNull w.toTerminal then "" else w.toTerminal } })
+            let wires : ConstraintWire list =
+                wiresDto
+                |> List.map (fun w ->
+                    { FromRef =
+                        { BlockId = if isNull w.fromBlockId then "" else w.fromBlockId
+                          Terminal = if isNull w.fromTerminal then "" else w.fromTerminal }
+                      ToRef =
+                        { BlockId = if isNull w.toBlockId then "" else w.toBlockId
+                          Terminal = if isNull w.toTerminal then "" else w.toTerminal } })
 
-        let knownValues : KnownTerminalValue list =
-            knownValuesDto
-            |> List.map (fun kv ->
-                { Ref =
-                    { BlockId = if isNull kv.blockId then "" else kv.blockId
-                      Terminal = if isNull kv.terminal then "" else kv.terminal }
-                  Value = kv.value })
+            let knownValues : KnownTerminalValue list =
+                knownValuesDto
+                |> List.map (fun kv ->
+                    { Ref =
+                        { BlockId = if isNull kv.blockId then "" else kv.blockId
+                          Terminal = if isNull kv.terminal then "" else kv.terminal }
+                      Value = kv.value })
 
-        ({ Blocks = blocks
-           Wires = wires
-           KnownValues = knownValues },
-         List.ofSeq errors)
-        
+            ({ Blocks = blocks
+               Wires = wires
+               KnownValues = knownValues },
+             List.ofSeq errors)     
     let private constraintValueToObj =
         function
         | ConstraintRuntime.Known v -> box v
@@ -203,6 +227,23 @@ module Program =
         | ConstraintRuntime.Underdetermined -> "Underdetermined"
         | ConstraintRuntime.Error -> "Error"
 
+    let private toConstraintRunResponse (result: ConstraintRuntime.SolveResult) =
+        let blocks =
+            result.Blocks
+            |> List.map (fun b ->
+                let terminals =
+                    b.Values
+                    |> Map.toList
+                    |> List.map (fun (name, value) ->
+                        {| name = name
+                           value = constraintValueToObj value |})
+
+                {| id = b.Block.Id
+                   status = constraintStatusToString b.Status
+                   terminals = terminals |})
+
+        {| ok = true; blocks = blocks |}
+        
     let private uiToCoreGraph (dto: UiGraphDto) : Graph * string list =
         let errors = ResizeArray<string>()
 
@@ -273,6 +314,40 @@ module Program =
                 None)
         |> Array.toList
 
+    let private writeConstraintGraph (stored: StoredConstraintGraph) =
+        ensureConstraintStorage()
+        let json = JsonSerializer.Serialize(stored, jsonOptions)
+        File.WriteAllText(constraintGraphPath stored.meta.id, json)
+
+    let private tryReadConstraintGraph (id: string) : StoredConstraintGraph option =
+        ensureConstraintStorage()
+        let path = constraintGraphPath id
+        if File.Exists(path) then
+            let json = File.ReadAllText(path)
+            Some (JsonSerializer.Deserialize<StoredConstraintGraph>(json, jsonOptions))
+        else
+            None
+
+    let private listConstraintGraphs () : ConstraintGraphListItemDto list =
+        ensureConstraintStorage()
+
+        Directory.GetFiles(constraintGraphsDir, "*.json")
+        |> Array.choose (fun file ->
+            try
+                let json = File.ReadAllText(file)
+                let g = JsonSerializer.Deserialize<StoredConstraintGraph>(json, jsonOptions)
+
+                Some
+                    { id = g.meta.id
+                      createdAtUtc = g.meta.createdAtUtc
+                      updatedAtUtc = g.meta.updatedAtUtc
+                      blockCount = g.graph.blocks.Length
+                      wireCount = g.graph.wires.Length
+                      knownValueCount = g.graph.knownValues.Length }
+            with _ ->
+                None)
+        |> Array.toList
+        
     let private getInputsForNode (g: Graph) (nodeId: string) =
         g.edges
         |> List.filter (fun e -> e.toId = nodeId)
@@ -503,9 +578,11 @@ module Program =
             Func<UiGraphDto, IResult>(fun ui ->
                 let id = Guid.NewGuid().ToString("N")
                 let now = DateTime.UtcNow
-                let stored =
+
+                let stored : StoredGraph =
                     { meta = { id = id; createdAtUtc = now; updatedAtUtc = now }
                       graph = ui }
+
                 writeGraph stored
                 Results.Ok({| ok = true; id = id |})
             )
@@ -640,6 +717,84 @@ module Program =
                                    terminals = terminals |})
 
                         Results.Ok({| ok = true; blocks = blocks |})
+            )
+        ) |> ignore
+
+        app.MapPost(
+            "/api/constraint/graphs",
+            Func<ConstraintUiGraphDto, IResult>(fun ui ->
+                let id = Guid.NewGuid().ToString("N")
+                let now = DateTime.UtcNow
+
+                let stored : StoredConstraintGraph =
+                    { meta =
+                        { id = id
+                          createdAtUtc = now
+                          updatedAtUtc = now }
+                      graph = ui }
+
+                writeConstraintGraph stored
+                Results.Ok({| ok = true; id = id |})
+            )
+        ) |> ignore
+        
+        app.MapGet(
+            "/api/constraint/graphs",
+            Func<IResult>(fun () ->
+                Results.Ok({| ok = true; items = listConstraintGraphs() |})
+            )
+        ) |> ignore
+        
+        app.MapGet(
+            "/api/constraint/graphs/{id}",
+            Func<string, IResult>(fun id ->
+                match tryReadConstraintGraph id with
+                | None ->
+                    Results.NotFound({| ok = false; errors = [ "Constraint graph not found." ] |})
+                | Some g ->
+                    Results.Ok({| ok = true; graph = g |})
+            )
+        ) |> ignore
+        
+        app.MapPost(
+            "/api/constraint/graphs/{id}/validate",
+            Func<string, IResult>(fun id ->
+                match tryReadConstraintGraph id with
+                | None ->
+                    Results.NotFound({| ok = false; errors = [ "Constraint graph not found." ] |})
+                | Some stored ->
+                    let graph, parseErrors = uiToConstraintGraph stored.graph
+
+                    if not parseErrors.IsEmpty then
+                        Results.BadRequest({| ok = false; errors = parseErrors |})
+                    else
+                        let validation = ConstraintGraphValidation.validate graph
+                        if validation.Ok then
+                            Results.Ok({| ok = true |})
+                        else
+                            Results.BadRequest({| ok = false; errors = validation.Errors |})
+            )
+        ) |> ignore
+        
+        app.MapPost(
+            "/api/constraint/graphs/{id}/run",
+            Func<string, IResult>(fun id ->
+                match tryReadConstraintGraph id with
+                | None ->
+                    Results.NotFound({| ok = false; errors = [ "Constraint graph not found." ] |})
+                | Some stored ->
+                    let graph, parseErrors = uiToConstraintGraph stored.graph
+
+                    if not parseErrors.IsEmpty then
+                        Results.BadRequest({| ok = false; errors = parseErrors |})
+                    else
+                        let validation = ConstraintGraphValidation.validate graph
+
+                        if not validation.Ok then
+                            Results.BadRequest({| ok = false; errors = validation.Errors |})
+                        else
+                            let result = ConstraintRuntime.solve graph
+                            Results.Ok(toConstraintRunResponse result)
             )
         ) |> ignore
 

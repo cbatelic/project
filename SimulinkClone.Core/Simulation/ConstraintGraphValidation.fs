@@ -17,6 +17,10 @@ module ConstraintGraphValidation =
         | UnknownKnownValueBlock of ConstraintBlockId
         | UnknownKnownValueTerminal of ConstraintBlockId * TerminalName
         | DuplicateKnownValueForTerminal of ConstraintBlockId * TerminalName
+        | InvalidWireSourceTerminal of ConstraintBlockId * TerminalName
+        | InvalidWireTargetTerminal of ConstraintBlockId * TerminalName
+        | ConstantCannotHaveIncomingWire of ConstraintBlockId
+        | GainCannotAcceptTerminal of ConstraintBlockId * TerminalName
 
     type ConstraintGraphValidation =
         { Ok: bool
@@ -60,6 +64,18 @@ module ConstraintGraphValidation =
         | DuplicateKnownValueForTerminal (blockId, terminal) ->
             $"Multiple known values are defined for block '{blockId}' terminal '{terminal}'."
 
+        | InvalidWireSourceTerminal (blockId, terminal) ->
+            $"Wire source terminal must be 'Result', but block '{blockId}' uses '{terminal}'."
+
+        | InvalidWireTargetTerminal (blockId, terminal) ->
+            $"Wire target terminal must be an input terminal ('A' or 'B'), but block '{blockId}' uses '{terminal}'."
+
+        | ConstantCannotHaveIncomingWire blockId ->
+            $"Constant block '{blockId}' cannot have incoming wires."
+
+        | GainCannotAcceptTerminal (blockId, terminal) ->
+            $"Gain block '{blockId}' cannot accept terminal '{terminal}'. Only terminal 'A' may be used as input."
+
     let private terminalNames (block: ConstraintBlock) =
         block.Terminals |> List.map (fun t -> t.Name)
 
@@ -70,6 +86,12 @@ module ConstraintGraphValidation =
         let e = expected |> Set.ofList
         let a = actual |> Set.ofList
         e = a
+
+    let private isValidInputTerminal =
+        function
+        | "A"
+        | "B" -> true
+        | _ -> false
 
     let validate (graph: ConstraintGraph) : ConstraintGraphValidation =
         let errors = ResizeArray<ConstraintGraphError>()
@@ -115,6 +137,8 @@ module ConstraintGraphValidation =
             | Some fromBlock ->
                 if not (hasTerminal wire.FromRef.Terminal fromBlock) then
                     errors.Add(UnknownFromTerminal (wire.FromRef.BlockId, wire.FromRef.Terminal))
+                elif wire.FromRef.Terminal <> "Result" then
+                    errors.Add(InvalidWireSourceTerminal (wire.FromRef.BlockId, wire.FromRef.Terminal))
 
             match blockMap |> Map.tryFind wire.ToRef.BlockId with
             | None ->
@@ -122,6 +146,22 @@ module ConstraintGraphValidation =
             | Some toBlock ->
                 if not (hasTerminal wire.ToRef.Terminal toBlock) then
                     errors.Add(UnknownToTerminal (wire.ToRef.BlockId, wire.ToRef.Terminal))
+                else
+                    if not (isValidInputTerminal wire.ToRef.Terminal) then
+                        errors.Add(InvalidWireTargetTerminal (wire.ToRef.BlockId, wire.ToRef.Terminal))
+
+                    match toBlock.Kind with
+                    | ConstraintBlockKind.Constant ->
+                        errors.Add(ConstantCannotHaveIncomingWire toBlock.Id)
+
+                    | ConstraintBlockKind.Gain ->
+                        if wire.ToRef.Terminal <> "A" then
+                            errors.Add(GainCannotAcceptTerminal (toBlock.Id, wire.ToRef.Terminal))
+
+                    | ConstraintBlockKind.Add
+                    | ConstraintBlockKind.Subtract
+                    | ConstraintBlockKind.Multiply ->
+                        ()
 
         let duplicateInputs =
             graph.Wires

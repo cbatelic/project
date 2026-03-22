@@ -51,6 +51,10 @@ type ConstraintKnownEditor =
     { mutable A: float option
       mutable B: float option
       mutable Result: float option }
+    
+type ConstraintSolvedState =
+    { Status: string
+      Values: Map<string, float option> }
 
 type MainWindow() as this =
     inherit Window()
@@ -70,7 +74,7 @@ type MainWindow() as this =
 
     let mutable selectedBlock: BlockControl option = None
     let constraintKnowns = Dictionary<string, ConstraintKnownEditor>()
-
+    let constraintSolved = Dictionary<string, ConstraintSolvedState>()
     let initXaml () =
         AvaloniaXamlLoader.Load(this) |> ignore
 
@@ -113,7 +117,37 @@ type MainWindow() as this =
         row.Children.Add(l) |> ignore
         row.Children.Add(v) |> ignore
         row
+
+    let tryGetSolvedState (blockId: string) =
+        match constraintSolved.TryGetValue(blockId) with
+        | true, state -> Some state
+        | false, _ -> None
         
+    let applyConstraintVisualState (b: BlockControl) =
+        match tryGetSolvedState b.NodeId with
+        | None ->
+            b.Background <- SolidColorBrush(Color.Parse("#2b2b2b"))
+            b.BorderBrush <- SolidColorBrush(Color.Parse("#5a5a5a"))
+
+        | Some solved ->
+            match solved.Status.Trim().ToLowerInvariant() with
+            | "ok" ->
+                b.Background <- SolidColorBrush(Color.Parse("#1f3a2a"))
+                b.BorderBrush <- SolidColorBrush(Color.Parse("#4ade80"))
+
+            | "underdetermined" ->
+                b.Background <- SolidColorBrush(Color.Parse("#3f3420"))
+                b.BorderBrush <- SolidColorBrush(Color.Parse("#facc15"))
+
+            | "error" ->
+                b.Background <- SolidColorBrush(Color.Parse("#3f1f1f"))
+                b.BorderBrush <- SolidColorBrush(Color.Parse("#f87171"))
+
+            | _ ->
+                b.Background <- SolidColorBrush(Color.Parse("#2b2b2b"))
+                b.BorderBrush <- SolidColorBrush(Color.Parse("#5a5a5a"))
+    
+  
     let tryParseOptionalFloat (text: string) =
         let t = if isNull text then "" else text.Trim()
 
@@ -163,9 +197,45 @@ type MainWindow() as this =
         row.Children.Add(tb) |> ignore
         row
 
+    let addSolvedStateToInspector (host: StackPanel) (blockId: string) =
+        match tryGetSolvedState blockId with
+        | None -> ()
+        | Some solved ->
+            let sep = Separator()
+            sep.Margin <- Thickness(0.0, 8.0, 0.0, 8.0)
+            host.Children.Add(sep) |> ignore
+
+            host.Children.Add(mkLabel "Last solve result") |> ignore
+            host.Children.Add(mkRow "Status" solved.Status) |> ignore
+
+            let addValueRow terminal =
+                let valueText =
+                    match solved.Values |> Map.tryFind terminal |> Option.defaultValue None with
+                    | Some v -> sprintf "%g" v
+                    | None -> "?"
+
+                host.Children.Add(mkRow terminal valueText) |> ignore
+
+            addValueRow "A"
+            addValueRow "B"
+            addValueRow "Result"
+            
     let kindOf (b: BlockControl) =
         let k = b.Kind
         if isNull k then "" else k.Trim().ToLowerInvariant()
+        
+    let storeConstraintResult (result: ConstraintRunResponseDto) =
+        constraintSolved.Clear()
+
+        for block in result.blocks do
+            let values =
+                block.terminals
+                |> List.map (fun t -> t.name, t.value)
+                |> Map.ofList
+
+            constraintSolved[block.id] <-
+                { Status = block.status
+                  Values = values }
 
     let showInspectorForBlock (canvas: Canvas) (b: BlockControl) =
         let host = this.FindControl<StackPanel>("InspectorHost")
@@ -213,6 +283,7 @@ type MainWindow() as this =
             host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+            addSolvedStateToInspector host b.NodeId
         | "subtract" ->
             let editor = getOrCreateConstraintKnownEditor b.NodeId
 
@@ -222,6 +293,7 @@ type MainWindow() as this =
             host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+            addSolvedStateToInspector host b.NodeId
         | "multiply" ->
             let editor = getOrCreateConstraintKnownEditor b.NodeId
 
@@ -231,6 +303,7 @@ type MainWindow() as this =
             host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+            addSolvedStateToInspector host b.NodeId
         | "constraint" ->
             host.Children.Add(mkLabel "Constraint") |> ignore
             host.Children.Add(mkRow "Mode" "Clamp") |> ignore
@@ -251,6 +324,7 @@ type MainWindow() as this =
             host.Children.Add(mkMuted "Gain factor se uzima iz bloka, a ovdje unosiš poznate terminal vrijednosti.") |> ignore
             host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+            addSolvedStateToInspector host b.NodeId
         | _ ->
             host.Children.Add(mkMuted "Nema UI definiran za ovaj blok još.") |> ignore
 
@@ -262,6 +336,15 @@ type MainWindow() as this =
         | "multiply"
         | "gain" -> true
         | _ -> false
+        
+    let refreshConstraintVisualStates (canvas: Canvas) =
+        canvas.Children
+        |> Seq.iter (fun c ->
+            match c with
+            | :? BlockControl as b ->
+                if isConstraintKind (kindOf b) then
+                    applyConstraintVisualState b
+            | _ -> ()) 
 
     let getConstraintKnownValues (b: BlockControl) =
         let k = kindOf b
@@ -685,6 +768,9 @@ type MainWindow() as this =
                 | _ -> ()
             )
 
+            if isConstraintKind k then
+                applyConstraintVisualState b
+
             canvas.Children.Add(b) |> ignore
             selectBlock b
 
@@ -786,12 +872,43 @@ type MainWindow() as this =
                         )
 
                     if result.ok then
+                        storeConstraintResult result
+                        refreshConstraintVisualStates canvas
                         setOutput (formatConstraintResult result)
+
+                        match selectedBlock with
+                        | Some b -> showInspectorForBlock canvas b
+                        | None -> ()
                     else
                         setOutput "Constraint run returned ok=false."
 
                 with ex ->
                     setOutput ("CONSTRAINT RUN ERROR: " + ex.Message)
+            } |> ignore
+        )
+        
+        this.FindControl<Button>("BtnListConstraints").Click.Add(fun _ ->
+            task {
+                try
+                    let! res =
+                        client.GetJsonAsync<ConstraintGraphListResponse>("api/constraint/graphs")
+
+                    if res.ok then
+                        let text =
+                            res.items
+                            |> List.map (fun i ->
+                                sprintf "Id=%s | blocks=%d | wires=%d | known=%d"
+                                    i.id i.blockCount i.wireCount i.knownValueCount)
+                            |> String.concat Environment.NewLine
+
+                        if String.IsNullOrWhiteSpace(text) then
+                            setOutput "No saved constraint graphs."
+                        else
+                            setOutput text
+                    else
+                        setOutput "LIST CONSTRAINTS ERROR: backend returned ok=false"
+                with ex ->
+                    setOutput ("LIST CONSTRAINTS ERROR: " + ex.Message)
             } |> ignore
         )
 

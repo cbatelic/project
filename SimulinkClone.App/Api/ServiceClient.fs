@@ -55,3 +55,16 @@ type ServiceClient(baseUrl: string) =
             return ()
         }
         |> Async.StartAsTask
+        
+    member _.GetJsonAsync<'T>(url: string) : Task<'T> =
+        task {
+            let fullUrl =
+                if url.StartsWith("http", StringComparison.OrdinalIgnoreCase) then url
+                else baseUrl.TrimEnd('/') + "/" + url.TrimStart('/')
+
+            use req = new HttpRequestMessage(HttpMethod.Get, fullUrl)
+            let! res = http.SendAsync(req)
+            res.EnsureSuccessStatusCode() |> ignore
+            let! body = res.Content.ReadAsStringAsync()
+            return JsonSerializer.Deserialize<'T>(body, jsonOptions)
+        }

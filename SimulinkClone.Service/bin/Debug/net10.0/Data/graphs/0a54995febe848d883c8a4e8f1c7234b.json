@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "id": "0a54995febe848d883c8a4e8f1c7234b",
+    "createdAtUtc": "2026-03-22T17:38:43.6731798Z",
+    "updatedAtUtc": "2026-03-22T17:38:43.6731798Z"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "1b979c28017d4ad1ae7488296d1965a9",
+        "kind": "subtract",
+        "constant": null,
+        "x": 60,
+        "y": 60
+      }
+    ],
+    "edges": []
+  }
+}

@@ -38,6 +38,22 @@ type ConstraintBlockResultDto =
 type ConstraintRunResponseDto =
     { ok: bool
       blocks: ConstraintBlockResultDto list }
+    
+type SaveConstraintGraphResponse =
+    { ok: bool
+      id: string }
+
+type ConstraintGraphListItemDto =
+    { id: string
+      createdAtUtc: DateTime
+      updatedAtUtc: DateTime
+      blockCount: int
+      wireCount: int
+      knownValueCount: int }
+
+type ConstraintGraphListResponse =
+    { ok: bool
+      items: ConstraintGraphListItemDto list }
 
 module ConstraintApi =
 
