@@ -12,6 +12,7 @@ open Avalonia.Markup.Xaml
 open Avalonia.Media
 open Avalonia.Controls.Shapes
 open Avalonia.Layout
+open Avalonia.Threading
 
 open SimulinkClone.App.Controls
 open SimulinkClone.App.Api
@@ -450,7 +451,9 @@ type MainWindow() as this =
                                 match k with
                                 | "constant" -> b.Constant
                                 | "gain" -> b.Constant
-                                | _ -> None }
+                                | _ -> None
+                              x = Some (Canvas.GetLeft(b))
+                              y = Some (Canvas.GetTop(b)) }
                     else
                         None
                 | _ -> None)
@@ -493,16 +496,31 @@ type MainWindow() as this =
     
     let getOutputPortPosition (block: BlockControl) (canvas: Canvas) =
         let port = block.FindControl<Border>("OutputPort")
-        port.TranslatePoint(Point(6, 6), canvas).Value
+        let p = port.TranslatePoint(Point(6, 6), canvas)
+
+        if p.HasValue then
+            p.Value
+        else
+            Point(Canvas.GetLeft(block) + 120.0, Canvas.GetTop(block) + 30.0)
 
     let getInputPortPosition (block: BlockControl) (portId: InputPortId) (canvas: Canvas) =
         let name =
             match portId with
             | In1 -> "InputPort1"
             | In2 -> "InputPort2"
-        let port = block.FindControl<Border>(name)
-        port.TranslatePoint(Point(6, 6), canvas).Value
 
+        let port = block.FindControl<Border>(name)
+        let p = port.TranslatePoint(Point(6, 6), canvas)
+
+        if p.HasValue then
+            p.Value
+        else
+            let x = Canvas.GetLeft(block)
+            let y = Canvas.GetTop(block)
+            match portId with
+            | In1 -> Point(x, y + 24.0)
+            | In2 -> Point(x, y + 54.0)
+            
     let clamp (v: float) (minV: float) (maxV: float) =
         Math.Max(minV, Math.Min(maxV, v))
 
@@ -613,8 +631,8 @@ type MainWindow() as this =
             selectedBlock <- Some b
             showInspectorForBlock canvas b
             setOutput (sprintf "Selected: %s (%s)" b.NodeId (kindOf b))
-
-        let addBlock (kind: string) =
+            
+        let createBlockAt (kind: string) (x: float) (y: float) =
             let b = BlockControl()
             let k = kind.Trim().ToLowerInvariant()
             b.Kind <- k
@@ -632,7 +650,6 @@ type MainWindow() as this =
                 b.SetTitle("Subtract")
                 b.Constant <- None
                 b.IntegratorInitial <- None
-
             | "multiply" ->
                 b.SetTitle("Multiply")
                 b.Constant <- None
@@ -652,10 +669,8 @@ type MainWindow() as this =
             | _ ->
                 b.SetTitle(kind)
 
-            Canvas.SetLeft(b, nextX)
-            Canvas.SetTop(b, nextY)
-            nextX <- nextX + 30.0
-            nextY <- nextY + 30.0
+            Canvas.SetLeft(b, x)
+            Canvas.SetTop(b, y)
 
             b.PointerPressed.Add(fun args ->
                 if not args.Handled then
@@ -772,8 +787,118 @@ type MainWindow() as this =
                 applyConstraintVisualState b
 
             canvas.Children.Add(b) |> ignore
+            b
+            
+        let addBlock (k: string) =
+            let b = createBlockAt k nextX nextY
+            nextX <- nextX + 30.0
+            nextY <- nextY + 30.0
             selectBlock b
+            
+        let clearCanvasGraph () =
+            cancelConnect canvas
 
+            let toRemove =
+                canvas.Children
+                |> Seq.toList
+                |> List.filter (fun c ->
+                    match c with
+                    | :? BlockControl -> true
+                    | :? Path -> true
+                    | _ -> false)
+
+            for c in toRemove do
+                canvas.Children.Remove(c) |> ignore
+
+            connections.Clear()
+            constraintKnowns.Clear()
+            constraintSolved.Clear()
+            selectedBlock <- None
+            clearInspector()
+            setOutput ""
+            
+        let loadConstraintGraphToCanvas (graph: ConstraintUiGraphDto) =
+            clearCanvasGraph ()
+
+            let blockMap = Dictionary<string, BlockControl>()
+
+            // blocks
+            for b in graph.blocks do
+                let x = defaultArg b.x 60.0
+                let y = defaultArg b.y 60.0
+
+                let block = createBlockAt b.kind x y
+
+                block.Kind <- b.kind
+                block.NodeId <- b.id
+
+                match b.kind.Trim().ToLowerInvariant() with
+                | "constant" ->
+                    block.Constant <- b.constantValue
+                    block.SetTitle("Constant")
+                | "gain" ->
+                    block.Constant <- b.constantValue
+                    block.SetTitle("Gain")
+                | "add" ->
+                    block.SetTitle("Add")
+                | "subtract" ->
+                    block.SetTitle("Subtract")
+                | "multiply" ->
+                    block.SetTitle("Multiply")
+                | _ -> ()
+
+                blockMap[b.id] <- block
+
+            // known values back into inspector model
+            for kv in graph.knownValues do
+                let editor = getOrCreateConstraintKnownEditor kv.blockId
+                match kv.terminal with
+                | "A" -> editor.A <- Some kv.value
+                | "B" -> editor.B <- Some kv.value
+                | "Result" -> editor.Result <- Some kv.value
+                | _ -> ()
+
+            // pričekaj layout pa tek onda nacrtaj wires
+            Dispatcher.UIThread.Post((fun () ->
+                for w in graph.wires do
+                    if blockMap.ContainsKey(w.fromBlockId) && blockMap.ContainsKey(w.toBlockId) then
+                        let fromBlock = blockMap[w.fromBlockId]
+                        let toBlock = blockMap[w.toBlockId]
+
+                        let inputId =
+                            match w.toTerminal with
+                            | "A" -> In1
+                            | "B" -> In2
+                            | _ -> In1
+
+                        let startP = getOutputPortPosition fromBlock canvas
+                        let endP = getInputPortPosition toBlock inputId canvas
+                        let geom, fig, seg, path, arrowGeom, arrowFig, ls1, ls2, arrow = createBezierPath()
+                        updateBezierAndArrow startP endP fig seg arrowFig ls1 ls2
+
+                        canvas.Children.Insert(0, path) |> ignore
+                        canvas.Children.Insert(0, arrow) |> ignore
+
+                        let conn =
+                            { From = { Block = fromBlock; Input = None }
+                              To_ = { Block = toBlock; Input = Some inputId }
+                              Path = path
+                              Geom = geom
+                              Fig = fig
+                              Seg = seg
+                              Arrow = arrow
+                              ArrowGeom = arrowGeom
+                              ArrowFig = arrowFig
+                              ArrowSeg1 = ls1
+                              ArrowSeg2 = ls2 }
+
+                        connections.Add(conn)
+
+                if graph.blocks.Length > 0 then
+                    let first = blockMap[graph.blocks.Head.id]
+                    selectBlock first
+            ), DispatcherPriority.Background)
+            
         this.FindControl<Button>("BtnConstant").Click.Add(fun _ -> addBlock "constant")
         this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
         this.FindControl<Button>("BtnSubtract").Click.Add(fun _ -> addBlock "subtract")
@@ -859,17 +984,29 @@ type MainWindow() as this =
                     setOutput ("RUN ERROR: " + ex.Message)
             } |> ignore
         )
+   
+        this.FindControl<Button>("BtnSaveConstraint").Click.Add(fun _ ->
+            task {
+                try
+                    let graph = buildConstraintGraphDto canvas
+                    let! saved = client.SaveConstraintAsync(graph)
+
+                    if saved.ok then
+                        setOutput (sprintf "Constraint graph saved. Id=%s" saved.id)
+                        this.FindControl<TextBox>("TxtConstraintGraphId").Text <- saved.id
+                    else
+                        setOutput "SAVE CONSTRAINT ERROR: backend returned ok=false"
+                with ex ->
+                    setOutput ("SAVE CONSTRAINT ERROR: " + ex.Message)
+            } |> ignore
+        )
         
         this.FindControl<Button>("BtnConstraintRun").Click.Add(fun _ ->
             task {
                 try
                     let graph = buildConstraintGraphDto canvas
 
-                    let! result =
-                        client.PostJsonAsync<ConstraintUiGraphDto, ConstraintRunResponseDto>(
-                            "api/constraint/run",
-                            graph
-                        )
+                    let! result = client.RunConstraintAsync(graph)
 
                     if result.ok then
                         storeConstraintResult result
@@ -890,8 +1027,7 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnListConstraints").Click.Add(fun _ ->
             task {
                 try
-                    let! res =
-                        client.GetJsonAsync<ConstraintGraphListResponse>("api/constraint/graphs")
+                    let! res = client.ListConstraintAsync()
 
                     if res.ok then
                         let text =
@@ -901,10 +1037,7 @@ type MainWindow() as this =
                                     i.id i.blockCount i.wireCount i.knownValueCount)
                             |> String.concat Environment.NewLine
 
-                        if String.IsNullOrWhiteSpace(text) then
-                            setOutput "No saved constraint graphs."
-                        else
-                            setOutput text
+                        setOutput (if String.IsNullOrWhiteSpace(text) then "No saved constraint graphs." else text)
                     else
                         setOutput "LIST CONSTRAINTS ERROR: backend returned ok=false"
                 with ex ->
@@ -912,6 +1045,51 @@ type MainWindow() as this =
             } |> ignore
         )
 
+        this.FindControl<Button>("BtnLoadConstraint").Click.Add(fun _ ->
+            task {
+                try
+                    let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
+
+                    if String.IsNullOrWhiteSpace(idText) then
+                        setOutput "Upiši constraint graph id."
+                    else
+                        let! res = client.GetConstraintAsync(idText)
+
+                        if res.ok then
+                            loadConstraintGraphToCanvas res.graph.graph
+                            setOutput (sprintf "Constraint graph loaded: %s" res.graph.meta.id)
+                        else
+                            setOutput "LOAD CONSTRAINT ERROR: backend returned ok=false"
+                with ex ->
+                    setOutput ("LOAD CONSTRAINT ERROR: " + ex.Message)
+            } |> ignore
+        )
+        
+        this.FindControl<Button>("BtnRunSavedConstraint").Click.Add(fun _ ->
+            task {
+                try
+                    let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
+
+                    if String.IsNullOrWhiteSpace(idText) then
+                        setOutput "Upiši constraint graph id."
+                    else
+                        let! result = client.RunSavedConstraintAsync(idText)
+
+                        if result.ok then
+                            storeConstraintResult result
+                            refreshConstraintVisualStates canvas
+                            setOutput (formatConstraintResult result)
+
+                            match selectedBlock with
+                            | Some b -> showInspectorForBlock canvas b
+                            | None -> ()
+                        else
+                            setOutput "RUN SAVED CONSTRAINT ERROR: backend returned ok=false"
+                with ex ->
+                    setOutput ("RUN SAVED CONSTRAINT ERROR: " + ex.Message)
+            } |> ignore
+        )
+        
         canvas.PointerMoved.Add(fun args ->
             let p = args.GetPosition(canvas)
 
@@ -943,3 +1121,5 @@ type MainWindow() as this =
                 | None -> ()
                 | Some _ -> cancelConnect canvas
         )
+        
+        

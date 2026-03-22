@@ -55,7 +55,9 @@ type GraphListItemDto =
 type ConstraintUiBlockDto =
     { id: string
       kind: string
-      constantValue: float option }
+      constantValue: float option
+      x: float option
+      y: float option }
 
 type ConstraintUiWireDto =
     { fromBlockId: string
@@ -89,6 +91,19 @@ type ConstraintGraphListItemDto =
       blockCount: int
       wireCount: int
       knownValueCount: int }
+    
+type StoredConstraintGraphMeta =
+    { id: string
+      createdAtUtc: DateTime
+      updatedAtUtc: DateTime }
+
+type StoredConstraintGraphDto =
+    { meta: StoredConstraintGraphMeta
+      graph: ConstraintUiGraphDto }
+
+type GetConstraintGraphResponse =
+    { ok: bool
+      graph: StoredConstraintGraphDto }
 
 module Program =
 

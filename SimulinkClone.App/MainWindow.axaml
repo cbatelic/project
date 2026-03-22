@@ -6,28 +6,39 @@
 
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="260,*,320">
 
-        <!-- Left toolbox -->
         <Border Grid.RowSpan="2" Grid.Column="0" Background="#1e1e1e" Padding="12">
             <StackPanel Spacing="8">
                 <TextBlock Text="Toolbox" FontSize="18" Foreground="White"/>
 
-                <!-- blocks -->
+                <!-- block creation -->
                 <Button Name="BtnConstant" Content="Constant" />
                 <Button Name="BtnAdd" Content="Summation (Add)" />
                 <Button Name="BtnSubtract" Content="Subtract" />
                 <Button Name="BtnMultiply" Content="Multiply" />
+                <Button Name="BtnGain" Content="Gain" />
                 <Button Name="BtnIntegrator" Content="Integrator" />
                 <Button Name="BtnConstraint" Content="Constraint" />
-                <Button Name="BtnGain" Content="Gain" />
 
                 <Separator Margin="0,6,0,6"/>
+
+                <!-- constraint actions -->
+                <TextBlock Text="Constraint Graph" Foreground="White" FontWeight="SemiBold"/>
                 <Button Name="BtnConstraintRun" Content="Run Constraint" />
                 <Button Name="BtnSaveConstraint" Content="Save Constraint" />
                 <Button Name="BtnListConstraints" Content="List Constraints" />
 
+                <TextBox Name="TxtConstraintGraphId"
+                         Watermark="constraint graph id" />
+
+                <Button Name="BtnLoadConstraint" Content="Load Constraint" />
+                <Button Name="BtnRunSavedConstraint" Content="Run Saved Constraint" />
+
+                <Separator Margin="0,6,0,6"/>
+
+                <!-- service -->
                 <Button x:Name="BtnPing" Content="Ping Service (/health)" Width="200"/>
 
-                <!-- small log -->
+                <!-- output -->
                 <TextBox x:Name="TxtOutput"
                          Height="160"
                          AcceptsReturn="True"
@@ -36,31 +47,24 @@
             </StackPanel>
         </Border>
 
-        <!-- Top bar -->
         <Border Grid.Row="0" Grid.Column="1" Background="#2a2a2a" Padding="10">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Name="BtnRun" Content="Run" />
                 <Button Content="Stop" />
-                <TextBlock  Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock Foreground="White" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
-        <!-- Canvas area -->
         <Border Grid.Row="1" Grid.Column="1" Background="#111">
             <Canvas Name="EditorCanvas"
                     Background="Transparent" />
         </Border>
 
-        <!-- Right inspector -->
         <Border Grid.RowSpan="2" Grid.Column="2" Background="#161616" Padding="12">
             <StackPanel Spacing="10">
                 <TextBlock Text="Inspector" FontSize="18" Foreground="White"/>
-
-                <!-- this gets filled dynamically -->
                 <StackPanel Name="InspectorHost" Spacing="8"/>
-
                 <Separator Margin="0,8,0,8"/>
-
                 <TextBlock Text="Hint:" Foreground="#bdbdbd"/>
                 <TextBlock Text="Klikni blok na canvasu da vidiš njegov UI ovdje desno."
                            TextWrapping="Wrap"

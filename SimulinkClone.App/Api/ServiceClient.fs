@@ -6,6 +6,72 @@ open System.Text
 open System.Text.Json
 open System.Threading.Tasks
 
+
+type ConstraintUiBlockDto =
+    { id: string
+      kind: string
+      constantValue: float option
+      x: float option
+      y: float option }
+
+type ConstraintUiWireDto =
+    { fromBlockId: string
+      fromTerminal: string
+      toBlockId: string
+      toTerminal: string }
+
+type ConstraintUiKnownValueDto =
+    { blockId: string
+      terminal: string
+      value: float }
+
+type ConstraintUiGraphDto =
+    { blocks: ConstraintUiBlockDto list
+      wires: ConstraintUiWireDto list
+      knownValues: ConstraintUiKnownValueDto list }
+
+type ConstraintTerminalResultDto =
+    { name: string
+      value: float option }
+
+type ConstraintBlockResultDto =
+    { id: string
+      status: string
+      terminals: ConstraintTerminalResultDto list }
+
+type ConstraintRunResponseDto =
+    { ok: bool
+      blocks: ConstraintBlockResultDto list }
+    
+type SaveConstraintGraphResponse =
+    { ok: bool
+      id: string }
+
+type ConstraintGraphListItemDto =
+    { id: string
+      createdAtUtc: DateTime
+      updatedAtUtc: DateTime
+      blockCount: int
+      wireCount: int
+      knownValueCount: int }
+
+type ConstraintGraphListResponse =
+    { ok: bool
+      items: ConstraintGraphListItemDto list }
+    
+type StoredConstraintGraphMeta =
+    { id: string
+      createdAtUtc: DateTime
+      updatedAtUtc: DateTime }
+
+type StoredConstraintGraphDto =
+    { meta: StoredConstraintGraphMeta
+      graph: ConstraintUiGraphDto }
+
+type GetConstraintGraphResponse =
+    { ok: bool
+      graph: StoredConstraintGraphDto }
+
 type ServiceClient(baseUrl: string) =
 
     let http =
@@ -68,3 +134,31 @@ type ServiceClient(baseUrl: string) =
             let! body = res.Content.ReadAsStringAsync()
             return JsonSerializer.Deserialize<'T>(body, jsonOptions)
         }
+        
+    member this.RunConstraintAsync(graph: ConstraintUiGraphDto) =
+        this.PostJsonAsync<ConstraintUiGraphDto, ConstraintRunResponseDto>(
+            "api/constraint/run",
+            graph
+        )
+
+    member this.SaveConstraintAsync(graph: ConstraintUiGraphDto) =
+        this.PostJsonAsync<ConstraintUiGraphDto, SaveConstraintGraphResponse>(
+            "api/constraint/graphs",
+            graph
+        )
+
+    member this.ListConstraintAsync() =
+        this.GetJsonAsync<ConstraintGraphListResponse>(
+            "api/constraint/graphs"
+        )
+
+    member this.GetConstraintAsync(id: string) =
+        this.GetJsonAsync<GetConstraintGraphResponse>(
+            $"api/constraint/graphs/{id}"
+        )
+
+    member this.RunSavedConstraintAsync(id: string) =
+        this.PostJsonAsync<obj, ConstraintRunResponseDto>(
+            $"api/constraint/graphs/{id}/run",
+            null
+        )

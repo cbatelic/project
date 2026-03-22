@@ -10,7 +10,6 @@
     <Compile Include="Api\UiDtos.fs" />
     <Compile Include="Api\RunDtos.fs" />
     <Compile Include="Api\ServiceClient.fs" />
-    <Compile Include="Api\ConstraintApi.fs" />
 
     <Compile Include="Controls\BlockControl.axaml.fs" />
     <Compile Include="PlotWindow.fs" />
