@@ -2,6 +2,8 @@ namespace SimulinkClone.App
 
 open System
 open System.Threading.Tasks
+open System.Globalization
+open System.Collections.Generic
 
 open Avalonia
 open Avalonia.Controls
@@ -44,6 +46,11 @@ type TempConnection =
       ArrowFig: PathFigure
       ArrowSeg1: LineSegment
       ArrowSeg2: LineSegment }
+    
+type ConstraintKnownEditor =
+    { mutable A: float option
+      mutable B: float option
+      mutable Result: float option }
 
 type MainWindow() as this =
     inherit Window()
@@ -62,6 +69,7 @@ type MainWindow() as this =
     let mutable tempConn: TempConnection option = None
 
     let mutable selectedBlock: BlockControl option = None
+    let constraintKnowns = Dictionary<string, ConstraintKnownEditor>()
 
     let initXaml () =
         AvaloniaXamlLoader.Load(this) |> ignore
@@ -104,6 +112,55 @@ type MainWindow() as this =
 
         row.Children.Add(l) |> ignore
         row.Children.Add(v) |> ignore
+        row
+        
+    let tryParseOptionalFloat (text: string) =
+        let t = if isNull text then "" else text.Trim()
+
+        if String.IsNullOrWhiteSpace(t) then
+            None
+        else
+            match Double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture) with
+            | true, v -> Some v
+            | false, _ -> None
+
+    let formatOptionalFloat =
+        function
+        | Some v -> sprintf "%g" v
+        | None -> ""
+
+    let getOrCreateConstraintKnownEditor (blockId: string) =
+        match constraintKnowns.TryGetValue(blockId) with
+        | true, editor -> editor
+        | false, _ ->
+            let editor =
+                { A = None
+                  B = None
+                  Result = None }
+            constraintKnowns[blockId] <- editor
+            editor
+
+    let mkInputRow (label: string) (initialValue: string) (onChanged: string -> unit) =
+        let row = Grid()
+        row.ColumnDefinitions <- ColumnDefinitions("120,*")
+        row.Margin <- Thickness(0.0, 2.0, 0.0, 2.0)
+
+        let l = TextBlock()
+        l.Text <- label
+        l.Foreground <- SolidColorBrush(Color.Parse("#bdbdbd"))
+        l.VerticalAlignment <- VerticalAlignment.Center
+        Grid.SetColumn(l, 0)
+
+        let tb = TextBox()
+        tb.Text <- initialValue
+        tb.Watermark <- "leave empty = unknown"
+        tb.MinWidth <- 120.0
+        tb.HorizontalAlignment <- HorizontalAlignment.Stretch
+        tb.TextChanged.Add(fun _ -> onChanged tb.Text)
+        Grid.SetColumn(tb, 1)
+
+        row.Children.Add(l) |> ignore
+        row.Children.Add(tb) |> ignore
         row
 
     let kindOf (b: BlockControl) =
@@ -148,10 +205,32 @@ type MainWindow() as this =
             host.Children.Add(mkMuted "Double-click block to edit (dialog).") |> ignore
 
         | "add" ->
-            host.Children.Add(mkLabel "Summation") |> ignore
-            host.Children.Add(mkRow "Operation" "In1 + In2") |> ignore
-            host.Children.Add(mkMuted "Kasnije: izbor znakova (+/-) kao u Simulinku.") |> ignore
+            let editor = getOrCreateConstraintKnownEditor b.NodeId
 
+            host.Children.Add(mkLabel "Add") |> ignore
+            host.Children.Add(mkRow "Operation" "A + B = Result") |> ignore
+            host.Children.Add(mkMuted "Unesi poznate vrijednosti. Prazno = unknown.") |> ignore
+            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+        | "subtract" ->
+            let editor = getOrCreateConstraintKnownEditor b.NodeId
+
+            host.Children.Add(mkLabel "Subtract") |> ignore
+            host.Children.Add(mkRow "Operation" "A - B = Result") |> ignore
+            host.Children.Add(mkMuted "Unesi poznate vrijednosti. Prazno = unknown.") |> ignore
+            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+        | "multiply" ->
+            let editor = getOrCreateConstraintKnownEditor b.NodeId
+
+            host.Children.Add(mkLabel "Multiply") |> ignore
+            host.Children.Add(mkRow "Operation" "A * B = Result") |> ignore
+            host.Children.Add(mkMuted "Unesi poznate vrijednosti. Prazno = unknown.") |> ignore
+            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
         | "constraint" ->
             host.Children.Add(mkLabel "Constraint") |> ignore
             host.Children.Add(mkRow "Mode" "Clamp") |> ignore
@@ -160,17 +239,175 @@ type MainWindow() as this =
             host.Children.Add(mkMuted "Kasnije: Min/Max polja + validacija.") |> ignore
 
         | "gain" ->
+            let editor = getOrCreateConstraintKnownEditor b.NodeId
+
             host.Children.Add(mkLabel "Gain") |> ignore
             let kTxt =
                 match b.Constant with
                 | Some v -> sprintf "%g" v
                 | None -> "-"
             host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
-            host.Children.Add(mkMuted "Double-click block to edit gain.") |> ignore
-    
+            host.Children.Add(mkRow "Operation" "k * A = Result") |> ignore
+            host.Children.Add(mkMuted "Gain factor se uzima iz bloka, a ovdje unosiš poznate terminal vrijednosti.") |> ignore
+            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
+            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
         | _ ->
             host.Children.Add(mkMuted "Nema UI definiran za ovaj blok još.") |> ignore
 
+    let isConstraintKind (kind: string) =
+        match (if isNull kind then "" else kind.Trim().ToLowerInvariant()) with
+        | "constant"
+        | "add"
+        | "subtract"
+        | "multiply"
+        | "gain" -> true
+        | _ -> false
+
+    let getConstraintKnownValues (b: BlockControl) =
+        let k = kindOf b
+
+        let fromEditor () =
+            match constraintKnowns.TryGetValue(b.NodeId) with
+            | false, _ -> []
+            | true, editor ->
+                match k with
+                | "gain" ->
+                    [ match editor.A with
+                      | Some v ->
+                          yield
+                              { blockId = b.NodeId
+                                terminal = "A"
+                                value = v }
+                      | None -> ()
+
+                      match editor.Result with
+                      | Some v ->
+                          yield
+                              { blockId = b.NodeId
+                                terminal = "Result"
+                                value = v }
+                      | None -> () ]
+
+                | "add"
+                | "subtract"
+                | "multiply" ->
+                    [ match editor.A with
+                      | Some v ->
+                          yield
+                              { blockId = b.NodeId
+                                terminal = "A"
+                                value = v }
+                      | None -> ()
+
+                      match editor.B with
+                      | Some v ->
+                          yield
+                              { blockId = b.NodeId
+                                terminal = "B"
+                                value = v }
+                      | None -> ()
+
+                      match editor.Result with
+                      | Some v ->
+                          yield
+                              { blockId = b.NodeId
+                                terminal = "Result"
+                                value = v }
+                      | None -> () ]
+
+                | _ -> []
+
+        match k with
+        | "constant" ->
+            match b.Constant with
+            | Some v ->
+                [ { blockId = b.NodeId
+                    terminal = "Result"
+                    value = v } ]
+            | None -> []
+
+        | "gain"
+        | "add"
+        | "subtract"
+        | "multiply" ->
+            fromEditor ()
+
+        | _ -> []
+    let tryMapConnectionToConstraintWire (e: Connection) =
+        let fromKind = kindOf e.From.Block
+        let toKind = kindOf e.To_.Block
+
+        if not (isConstraintKind fromKind) || not (isConstraintKind toKind) then
+            None
+        else
+            let toTerminal =
+                match e.To_.Input with
+                | Some In1 -> "A"
+                | Some In2 -> "B"
+                | None -> "A"
+
+            Some
+                { fromBlockId = e.From.Block.NodeId
+                  fromTerminal = "Result"
+                  toBlockId = e.To_.Block.NodeId
+                  toTerminal = toTerminal }
+
+    let buildConstraintGraphDto (canvas: Canvas) =
+        let blocks =
+            canvas.Children
+            |> Seq.choose (fun c ->
+                match c with
+                | :? BlockControl as b ->
+                    let k = kindOf b
+                    if isConstraintKind k then
+                        Some
+                            { id = b.NodeId
+                              kind = k
+                              constantValue =
+                                match k with
+                                | "constant" -> b.Constant
+                                | "gain" -> b.Constant
+                                | _ -> None }
+                    else
+                        None
+                | _ -> None)
+            |> Seq.toList
+
+        let wires =
+            connections
+            |> Seq.choose tryMapConnectionToConstraintWire
+            |> Seq.toList
+
+        let knownValues =
+            canvas.Children
+            |> Seq.choose (fun c ->
+                match c with
+                | :? BlockControl as b ->
+                    Some (getConstraintKnownValues b)
+                | _ -> None)
+            |> Seq.collect id
+            |> Seq.toList
+
+        { blocks = blocks
+          wires = wires
+          knownValues = knownValues }
+
+    let formatConstraintResult (result: ConstraintRunResponseDto) =
+        result.blocks
+        |> List.map (fun b ->
+            let terminals =
+                b.terminals
+                |> List.map (fun t ->
+                    let valueText =
+                        match t.value with
+                        | Some v -> sprintf "%g" v
+                        | None -> "?"
+                    sprintf "  %s = %s" t.name valueText)
+                |> String.concat Environment.NewLine
+
+            sprintf "Block: %s\nStatus: %s\n%s" b.id b.status terminals)
+        |> String.concat "\n\n"
+    
     let getOutputPortPosition (block: BlockControl) (canvas: Canvas) =
         let port = block.FindControl<Border>("OutputPort")
         port.TranslatePoint(Point(6, 6), canvas).Value
@@ -306,6 +543,15 @@ type MainWindow() as this =
                 b.IntegratorInitial <- None
             | "add" ->
                 b.SetTitle("Add")
+                b.Constant <- None
+                b.IntegratorInitial <- None
+            | "subtract" ->
+                b.SetTitle("Subtract")
+                b.Constant <- None
+                b.IntegratorInitial <- None
+
+            | "multiply" ->
+                b.SetTitle("Multiply")
                 b.Constant <- None
                 b.IntegratorInitial <- None
             | "integrator" ->
@@ -444,6 +690,8 @@ type MainWindow() as this =
 
         this.FindControl<Button>("BtnConstant").Click.Add(fun _ -> addBlock "constant")
         this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
+        this.FindControl<Button>("BtnSubtract").Click.Add(fun _ -> addBlock "subtract")
+        this.FindControl<Button>("BtnMultiply").Click.Add(fun _ -> addBlock "multiply")
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
         this.FindControl<Button>("BtnGain").Click.Add(fun _ -> addBlock "gain")
@@ -523,6 +771,27 @@ type MainWindow() as this =
 
                 with ex ->
                     setOutput ("RUN ERROR: " + ex.Message)
+            } |> ignore
+        )
+        
+        this.FindControl<Button>("BtnConstraintRun").Click.Add(fun _ ->
+            task {
+                try
+                    let graph = buildConstraintGraphDto canvas
+
+                    let! result =
+                        client.PostJsonAsync<ConstraintUiGraphDto, ConstraintRunResponseDto>(
+                            "api/constraint/run",
+                            graph
+                        )
+
+                    if result.ok then
+                        setOutput (formatConstraintResult result)
+                    else
+                        setOutput "Constraint run returned ok=false."
+
+                with ex ->
+                    setOutput ("CONSTRAINT RUN ERROR: " + ex.Message)
             } |> ignore
         )
 

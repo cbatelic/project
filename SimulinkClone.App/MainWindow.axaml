@@ -14,11 +14,14 @@
                 <!-- blocks -->
                 <Button Name="BtnConstant" Content="Constant" />
                 <Button Name="BtnAdd" Content="Summation (Add)" />
+                <Button Name="BtnSubtract" Content="Subtract" />
+                <Button Name="BtnMultiply" Content="Multiply" />
                 <Button Name="BtnIntegrator" Content="Integrator" />
                 <Button Name="BtnConstraint" Content="Constraint" />
                 <Button Name="BtnGain" Content="Gain" />
 
                 <Separator Margin="0,6,0,6"/>
+                <Button Name="BtnConstraintRun" Content="Run Constraint" />
 
                 <Button x:Name="BtnPing" Content="Ping Service (/health)" Width="200"/>
 
