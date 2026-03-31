@@ -47,15 +47,19 @@ type TempConnection =
       ArrowFig: PathFigure
       ArrowSeg1: LineSegment
       ArrowSeg2: LineSegment }
-    
+
 type ConstraintKnownEditor =
     { mutable A: float option
       mutable B: float option
       mutable Result: float option }
-    
+
 type ConstraintSolvedState =
     { Status: string
       Values: Map<string, float option> }
+
+type EditorMode =
+    | Simulation
+    | Constraint
 
 type MainWindow() as this =
     inherit Window()
@@ -64,6 +68,7 @@ type MainWindow() as this =
 
     let mutable nextX = 60.0
     let mutable nextY = 60.0
+    let mutable currentMode = Simulation
 
     let mutable dragging: BlockControl option = None
     let mutable dragOffset = Point(0, 0)
@@ -76,6 +81,7 @@ type MainWindow() as this =
     let mutable selectedBlock: BlockControl option = None
     let constraintKnowns = Dictionary<string, ConstraintKnownEditor>()
     let constraintSolved = Dictionary<string, ConstraintSolvedState>()
+
     let initXaml () =
         AvaloniaXamlLoader.Load(this) |> ignore
 
@@ -123,32 +129,90 @@ type MainWindow() as this =
         match constraintSolved.TryGetValue(blockId) with
         | true, state -> Some state
         | false, _ -> None
-        
+
+    let applySimulationVisualState (b: BlockControl) =
+        b.SetBodyVisual("#1A1F2A", "#3A465A")
+
     let applyConstraintVisualState (b: BlockControl) =
         match tryGetSolvedState b.NodeId with
         | None ->
-            b.Background <- SolidColorBrush(Color.Parse("#2b2b2b"))
-            b.BorderBrush <- SolidColorBrush(Color.Parse("#5a5a5a"))
-
+            b.SetBodyVisual("#312047", "#C084FC")
         | Some solved ->
             match solved.Status.Trim().ToLowerInvariant() with
             | "ok" ->
-                b.Background <- SolidColorBrush(Color.Parse("#1f3a2a"))
-                b.BorderBrush <- SolidColorBrush(Color.Parse("#4ade80"))
-
+                b.SetBodyVisual("#1f3a2a", "#4ade80")
             | "underdetermined" ->
-                b.Background <- SolidColorBrush(Color.Parse("#3f3420"))
-                b.BorderBrush <- SolidColorBrush(Color.Parse("#facc15"))
-
+                b.SetBodyVisual("#4a3b10", "#facc15")
             | "error" ->
-                b.Background <- SolidColorBrush(Color.Parse("#3f1f1f"))
-                b.BorderBrush <- SolidColorBrush(Color.Parse("#f87171"))
-
+                b.SetBodyVisual("#4a1f1f", "#f87171")
             | _ ->
-                b.Background <- SolidColorBrush(Color.Parse("#2b2b2b"))
-                b.BorderBrush <- SolidColorBrush(Color.Parse("#5a5a5a"))
-    
-  
+                b.SetBodyVisual("#312047", "#C084FC")
+
+    let setModeUi () =
+        let btnSimulationMode = this.FindControl<Button>("BtnSimulationMode")
+        let btnConstraintMode = this.FindControl<Button>("BtnConstraintMode")
+
+        let btnConstant = this.FindControl<Button>("BtnConstant")
+        let btnAdd = this.FindControl<Button>("BtnAdd")
+        let btnSubtract = this.FindControl<Button>("BtnSubtract")
+        let btnMultiply = this.FindControl<Button>("BtnMultiply")
+        let btnIntegrator = this.FindControl<Button>("BtnIntegrator")
+        let btnConstraint = this.FindControl<Button>("BtnConstraint")
+        let btnGain = this.FindControl<Button>("BtnGain")
+
+        let btnRun = this.FindControl<Button>("BtnRun")
+        let btnSaveConstraint = this.FindControl<Button>("BtnSaveConstraint")
+        let btnConstraintRun = this.FindControl<Button>("BtnConstraintRun")
+        let btnListConstraints = this.FindControl<Button>("BtnListConstraints")
+        let btnLoadConstraint = this.FindControl<Button>("BtnLoadConstraint")
+        let btnRunSavedConstraint = this.FindControl<Button>("BtnRunSavedConstraint")
+        let txtConstraintGraphId = this.FindControl<TextBox>("TxtConstraintGraphId")
+
+        match currentMode with
+        | Simulation ->
+            btnSimulationMode.Background <- SolidColorBrush(Color.Parse("#2563eb"))
+            btnConstraintMode.Background <- SolidColorBrush(Color.Parse("#3a3a3a"))
+
+            btnConstant.IsEnabled <- true
+            btnAdd.IsEnabled <- true
+            btnGain.IsEnabled <- true
+            btnIntegrator.IsEnabled <- true
+
+            btnSubtract.IsEnabled <- false
+            btnMultiply.IsEnabled <- false
+            btnConstraint.IsEnabled <- false
+
+            btnRun.IsEnabled <- true
+
+            btnSaveConstraint.IsEnabled <- false
+            btnConstraintRun.IsEnabled <- false
+            btnListConstraints.IsEnabled <- false
+            btnLoadConstraint.IsEnabled <- false
+            btnRunSavedConstraint.IsEnabled <- false
+            txtConstraintGraphId.IsEnabled <- false
+
+        | Constraint ->
+            btnSimulationMode.Background <- SolidColorBrush(Color.Parse("#3a3a3a"))
+            btnConstraintMode.Background <- SolidColorBrush(Color.Parse("#2563eb"))
+
+            btnConstant.IsEnabled <- true
+            btnAdd.IsEnabled <- true
+            btnGain.IsEnabled <- true
+            btnSubtract.IsEnabled <- true
+            btnMultiply.IsEnabled <- true
+            btnConstraint.IsEnabled <- true
+
+            btnIntegrator.IsEnabled <- false
+
+            btnRun.IsEnabled <- false
+
+            btnSaveConstraint.IsEnabled <- true
+            btnConstraintRun.IsEnabled <- true
+            btnListConstraints.IsEnabled <- true
+            btnLoadConstraint.IsEnabled <- true
+            btnRunSavedConstraint.IsEnabled <- true
+            txtConstraintGraphId.IsEnabled <- true
+
     let tryParseOptionalFloat (text: string) =
         let t = if isNull text then "" else text.Trim()
 
@@ -220,11 +284,11 @@ type MainWindow() as this =
             addValueRow "A"
             addValueRow "B"
             addValueRow "Result"
-            
+
     let kindOf (b: BlockControl) =
         let k = b.Kind
         if isNull k then "" else k.Trim().ToLowerInvariant()
-        
+
     let storeConstraintResult (result: ConstraintRunResponseDto) =
         constraintSolved.Clear()
 
@@ -276,58 +340,77 @@ type MainWindow() as this =
             host.Children.Add(mkMuted "Double-click block to edit (dialog).") |> ignore
 
         | "add" ->
-            let editor = getOrCreateConstraintKnownEditor b.NodeId
+            match currentMode with
+            | Simulation ->
+                host.Children.Add(mkLabel "Add") |> ignore
+                host.Children.Add(mkRow "Operation" "In1 + In2") |> ignore
+                host.Children.Add(mkMuted "Simulation block with two inputs.") |> ignore
 
-            host.Children.Add(mkLabel "Add") |> ignore
-            host.Children.Add(mkRow "Operation" "A + B = Result") |> ignore
-            host.Children.Add(mkMuted "Unesi poznate vrijednosti. Prazno = unknown.") |> ignore
-            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
-            addSolvedStateToInspector host b.NodeId
+            | Constraint ->
+                let editor = getOrCreateConstraintKnownEditor b.NodeId
+                host.Children.Add(mkLabel "Add") |> ignore
+                host.Children.Add(mkRow "Operation" "A + B = Result") |> ignore
+                host.Children.Add(mkMuted "Enter known values. Leave empty = unknown.") |> ignore
+                host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
+                host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
+                host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+                addSolvedStateToInspector host b.NodeId
+
         | "subtract" ->
             let editor = getOrCreateConstraintKnownEditor b.NodeId
-
             host.Children.Add(mkLabel "Subtract") |> ignore
             host.Children.Add(mkRow "Operation" "A - B = Result") |> ignore
-            host.Children.Add(mkMuted "Unesi poznate vrijednosti. Prazno = unknown.") |> ignore
+            host.Children.Add(mkMuted "Enter known values. Leave empty = unknown.") |> ignore
             host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
             addSolvedStateToInspector host b.NodeId
+
         | "multiply" ->
             let editor = getOrCreateConstraintKnownEditor b.NodeId
-
             host.Children.Add(mkLabel "Multiply") |> ignore
             host.Children.Add(mkRow "Operation" "A * B = Result") |> ignore
-            host.Children.Add(mkMuted "Unesi poznate vrijednosti. Prazno = unknown.") |> ignore
+            host.Children.Add(mkMuted "Enter known values. Leave empty = unknown.") |> ignore
             host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
             host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
             addSolvedStateToInspector host b.NodeId
+
+        | "gain" ->
+            match currentMode with
+            | Simulation ->
+                host.Children.Add(mkLabel "Gain") |> ignore
+                let kTxt =
+                    match b.Constant with
+                    | Some v -> sprintf "%g" v
+                    | None -> "-"
+                host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
+                host.Children.Add(mkRow "Operation" "k * input") |> ignore
+                host.Children.Add(mkMuted "Double-click block to edit factor.") |> ignore
+
+            | Constraint ->
+                let editor = getOrCreateConstraintKnownEditor b.NodeId
+                host.Children.Add(mkLabel "Gain") |> ignore
+                let kTxt =
+                    match b.Constant with
+                    | Some v -> sprintf "%g" v
+                    | None -> "-"
+                host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
+                host.Children.Add(mkRow "Operation" "k * A = Result") |> ignore
+                host.Children.Add(mkMuted "Gain factor comes from the block, while terminal values are entered here.") |> ignore
+                host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
+                host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
+                addSolvedStateToInspector host b.NodeId
+
         | "constraint" ->
             host.Children.Add(mkLabel "Constraint") |> ignore
             host.Children.Add(mkRow "Mode" "Clamp") |> ignore
             host.Children.Add(mkRow "Min" "-") |> ignore
             host.Children.Add(mkRow "Max" "-") |> ignore
-            host.Children.Add(mkMuted "Kasnije: Min/Max polja + validacija.") |> ignore
+            host.Children.Add(mkMuted "Min/Max parameters can be added later.") |> ignore
 
-        | "gain" ->
-            let editor = getOrCreateConstraintKnownEditor b.NodeId
-
-            host.Children.Add(mkLabel "Gain") |> ignore
-            let kTxt =
-                match b.Constant with
-                | Some v -> sprintf "%g" v
-                | None -> "-"
-            host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
-            host.Children.Add(mkRow "Operation" "k * A = Result") |> ignore
-            host.Children.Add(mkMuted "Gain factor se uzima iz bloka, a ovdje unosiš poznate terminal vrijednosti.") |> ignore
-            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
-            addSolvedStateToInspector host b.NodeId
         | _ ->
-            host.Children.Add(mkMuted "Nema UI definiran za ovaj blok još.") |> ignore
+            host.Children.Add(mkMuted "No UI has been defined for this block yet.") |> ignore
 
     let isConstraintKind (kind: string) =
         match (if isNull kind then "" else kind.Trim().ToLowerInvariant()) with
@@ -335,17 +418,35 @@ type MainWindow() as this =
         | "add"
         | "subtract"
         | "multiply"
-        | "gain" -> true
+        | "gain"
+        | "constraint" -> true
         | _ -> false
-        
+
+    let refreshAllBlockVisualStates (canvas: Canvas) =
+        canvas.Children
+        |> Seq.iter (fun c ->
+            match c with
+            | :? BlockControl as b ->
+                match currentMode with
+                | Simulation ->
+                    applySimulationVisualState b
+                | Constraint ->
+                    if isConstraintKind (kindOf b) then
+                        applyConstraintVisualState b
+                    else
+                        applySimulationVisualState b
+            | _ -> ())
+
     let refreshConstraintVisualStates (canvas: Canvas) =
         canvas.Children
         |> Seq.iter (fun c ->
             match c with
             | :? BlockControl as b ->
-                if isConstraintKind (kindOf b) then
+                if currentMode = Constraint && isConstraintKind (kindOf b) then
                     applyConstraintVisualState b
-            | _ -> ()) 
+                else
+                    applySimulationVisualState b
+            | _ -> ())
 
     let getConstraintKnownValues (b: BlockControl) =
         let k = kindOf b
@@ -417,6 +518,7 @@ type MainWindow() as this =
             fromEditor ()
 
         | _ -> []
+
     let tryMapConnectionToConstraintWire (e: Connection) =
         let fromKind = kindOf e.From.Block
         let toKind = kindOf e.To_.Block
@@ -493,7 +595,7 @@ type MainWindow() as this =
 
             sprintf "Block: %s\nStatus: %s\n%s" b.id b.status terminals)
         |> String.concat "\n\n"
-    
+
     let getOutputPortPosition (block: BlockControl) (canvas: Canvas) =
         let port = block.FindControl<Border>("OutputPort")
         let p = port.TranslatePoint(Point(6, 6), canvas)
@@ -520,7 +622,7 @@ type MainWindow() as this =
             match portId with
             | In1 -> Point(x, y + 24.0)
             | In2 -> Point(x, y + 54.0)
-            
+
     let clamp (v: float) (minV: float) (maxV: float) =
         Math.Max(minV, Math.Min(maxV, v))
 
@@ -631,7 +733,7 @@ type MainWindow() as this =
             selectedBlock <- Some b
             showInspectorForBlock canvas b
             setOutput (sprintf "Selected: %s (%s)" b.NodeId (kindOf b))
-            
+
         let createBlockAt (kind: string) (x: float) (y: float) =
             let b = BlockControl()
             let k = kind.Trim().ToLowerInvariant()
@@ -750,6 +852,7 @@ type MainWindow() as this =
                     sourceOutput <- None
                     tempConn <- None
                 | _ -> ()
+
             )
 
             b.InputPort2Clicked.Add(fun target ->
@@ -783,18 +886,18 @@ type MainWindow() as this =
                 | _ -> ()
             )
 
-            if isConstraintKind k then
-                applyConstraintVisualState b
+            match currentMode with
+            | Simulation ->
+                applySimulationVisualState b
+            | Constraint ->
+                if isConstraintKind k then
+                    applyConstraintVisualState b
+                else
+                    applySimulationVisualState b
 
             canvas.Children.Add(b) |> ignore
             b
-            
-        let addBlock (k: string) =
-            let b = createBlockAt k nextX nextY
-            nextX <- nextX + 30.0
-            nextY <- nextY + 30.0
-            selectBlock b
-            
+
         let clearCanvasGraph () =
             cancelConnect canvas
 
@@ -816,13 +919,51 @@ type MainWindow() as this =
             selectedBlock <- None
             clearInspector()
             setOutput ""
-            
+
+        let setMode mode =
+            currentMode <- mode
+            clearCanvasGraph ()
+            setModeUi ()
+
+            match currentMode with
+            | Simulation -> setOutput "Mode: Simulation"
+            | Constraint -> setOutput "Mode: Constraint"
+
+        let addBlock (k: string) =
+            let allowed =
+                match currentMode, k.Trim().ToLowerInvariant() with
+                | Simulation, "constant" -> true
+                | Simulation, "add" -> true
+                | Simulation, "gain" -> true
+                | Simulation, "integrator" -> true
+
+                | Constraint, "constant" -> true
+                | Constraint, "add" -> true
+                | Constraint, "subtract" -> true
+                | Constraint, "multiply" -> true
+                | Constraint, "gain" -> true
+                | Constraint, "constraint" -> true
+
+                | _ -> false
+
+            if not allowed then
+                let modeText =
+                    match currentMode with
+                    | Simulation -> "Simulation"
+                    | Constraint -> "Constraint"
+
+                setOutput (sprintf "Block '%s' is not allowed in %s mode." k modeText)
+            else
+                let b = createBlockAt k nextX nextY
+                nextX <- nextX + 30.0
+                nextY <- nextY + 30.0
+                selectBlock b
+
         let loadConstraintGraphToCanvas (graph: ConstraintUiGraphDto) =
             clearCanvasGraph ()
 
             let blockMap = Dictionary<string, BlockControl>()
 
-            // blocks
             for b in graph.blocks do
                 let x = defaultArg b.x 60.0
                 let y = defaultArg b.y 60.0
@@ -845,11 +986,12 @@ type MainWindow() as this =
                     block.SetTitle("Subtract")
                 | "multiply" ->
                     block.SetTitle("Multiply")
+                | "constraint" ->
+                    block.SetTitle("Constraint")
                 | _ -> ()
 
                 blockMap[b.id] <- block
 
-            // known values back into inspector model
             for kv in graph.knownValues do
                 let editor = getOrCreateConstraintKnownEditor kv.blockId
                 match kv.terminal with
@@ -858,7 +1000,6 @@ type MainWindow() as this =
                 | "Result" -> editor.Result <- Some kv.value
                 | _ -> ()
 
-            // pričekaj layout pa tek onda nacrtaj wires
             Dispatcher.UIThread.Post((fun () ->
                 for w in graph.wires do
                     if blockMap.ContainsKey(w.fromBlockId) && blockMap.ContainsKey(w.toBlockId) then
@@ -898,7 +1039,15 @@ type MainWindow() as this =
                     let first = blockMap[graph.blocks.Head.id]
                     selectBlock first
             ), DispatcherPriority.Background)
-            
+
+        this.FindControl<Button>("BtnSimulationMode").Click.Add(fun _ ->
+            setMode Simulation
+        )
+
+        this.FindControl<Button>("BtnConstraintMode").Click.Add(fun _ ->
+            setMode Constraint
+        )
+
         this.FindControl<Button>("BtnConstant").Click.Add(fun _ -> addBlock "constant")
         this.FindControl<Button>("BtnAdd").Click.Add(fun _ -> addBlock "add")
         this.FindControl<Button>("BtnSubtract").Click.Add(fun _ -> addBlock "subtract")
@@ -920,160 +1069,101 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnRun").Click.Add(fun _ ->
             task {
                 try
-                    let nodes =
-                        canvas.Children
-                        |> Seq.choose (fun c ->
-                            match c with
-                            | :? BlockControl as b ->
-                                Some
-                                    { id = b.NodeId
-                                      kind = b.Kind
-                                      constant =
-                                        match kindOf b with
-                                        | "constant" -> b.Constant
-                                        | "gain" -> b.Constant
-                                        | "integrator" -> b.IntegratorInitial
-                                        | _ -> None
-                                      x = Canvas.GetLeft(b)
-                                      y = Canvas.GetTop(b) }
-                            | _ -> None)
-                        |> Seq.toList
-
-                    let edges =
-                        connections
-                        |> Seq.map (fun e ->
-                            { fromId = e.From.Block.NodeId
-                              toId = e.To_.Block.NodeId
-                              toPort =
-                                match e.To_.Input with
-                                | Some In1 -> 1
-                                | Some In2 -> 2
-                                | None -> 1 })
-                        |> Seq.toList
-
-                    let graph: UiGraphDto = { nodes = nodes; edges = edges }
-
-                    let! saved =
-                        client.PostJsonAsync<UiGraphDto, SaveGraphResponse>("api/ui/graphs", graph)
-
-                    if not saved.ok then
-                        setOutput "SAVE ERROR: backend returned ok=false"
+                    if currentMode <> Simulation then
+                        setOutput "You are not currently in Simulation mode."
                     else
-                        // ✅ vrati sve serije, ne samo jednu
-                        let outputs =
-                            nodes |> List.map (fun n -> n.id)
+                        let nodes =
+                            canvas.Children
+                            |> Seq.choose (fun c ->
+                                match c with
+                                | :? BlockControl as b ->
+                                    Some
+                                        { id = b.NodeId
+                                          kind = b.Kind
+                                          constant =
+                                            match kindOf b with
+                                            | "constant" -> b.Constant
+                                            | "gain" -> b.Constant
+                                            | "integrator" -> b.IntegratorInitial
+                                            | _ -> None
+                                          x = Canvas.GetLeft(b)
+                                          y = Canvas.GetTop(b) }
+                                | _ -> None)
+                            |> Seq.toList
 
-                        let req: RunSavedRequest =
-                            { dt = 0.1
-                              steps = 200
-                              outputs = outputs }
+                        let edges =
+                            connections
+                            |> Seq.map (fun e ->
+                                { fromId = e.From.Block.NodeId
+                                  toId = e.To_.Block.NodeId
+                                  toPort =
+                                    match e.To_.Input with
+                                    | Some In1 -> 1
+                                    | Some In2 -> 2
+                                    | None -> 1 })
+                            |> Seq.toList
 
-                        let url = sprintf "api/ui/graphs/%s/run" saved.id
-                        let! runRes = client.PostJsonAsync<RunSavedRequest, RunResponse>(url, req)
+                        let graph: UiGraphDto = { nodes = nodes; edges = edges }
 
-                        setOutput (sprintf "OK. SavedId=%s. Series=%d" saved.id runRes.series.Length)
+                        let! saved =
+                            client.PostJsonAsync<UiGraphDto, SaveGraphResponse>("api/ui/graphs", graph)
 
-                        let owner =
-                            match TopLevel.GetTopLevel(this) with
-                            | :? Window as w -> Some w
-                            | _ -> None
+                        if not saved.ok then
+                            setOutput "SAVE ERROR: backend returned ok=false"
+                        else
+                            let outputs =
+                                nodes |> List.map (fun n -> n.id)
 
-                        PlotWindow.show owner "Simulation" runRes.series
+                            let req: RunSavedRequest =
+                                { dt = 0.1
+                                  steps = 200
+                                  outputs = outputs }
+
+                            let url = sprintf "api/ui/graphs/%s/run" saved.id
+                            let! runRes = client.PostJsonAsync<RunSavedRequest, RunResponse>(url, req)
+
+                            setOutput (sprintf "OK. SavedId=%s. Series=%d" saved.id runRes.series.Length)
+
+                            let owner =
+                                match TopLevel.GetTopLevel(this) with
+                                | :? Window as w -> Some w
+                                | _ -> None
+
+                            PlotWindow.show owner "Simulation" runRes.series
 
                 with ex ->
                     setOutput ("RUN ERROR: " + ex.Message)
             } |> ignore
         )
-   
+
         this.FindControl<Button>("BtnSaveConstraint").Click.Add(fun _ ->
             task {
                 try
-                    let graph = buildConstraintGraphDto canvas
-                    let! saved = client.SaveConstraintAsync(graph)
-
-                    if saved.ok then
-                        setOutput (sprintf "Constraint graph saved. Id=%s" saved.id)
-                        this.FindControl<TextBox>("TxtConstraintGraphId").Text <- saved.id
+                    if currentMode <> Constraint then
+                        setOutput "You are not currently in Constraint mode."
                     else
-                        setOutput "SAVE CONSTRAINT ERROR: backend returned ok=false"
+                        let graph = buildConstraintGraphDto canvas
+                        let! saved = client.SaveConstraintAsync(graph)
+
+                        if saved.ok then
+                            setOutput (sprintf "Constraint graph saved. Id=%s" saved.id)
+                            this.FindControl<TextBox>("TxtConstraintGraphId").Text <- saved.id
+                        else
+                            setOutput "SAVE CONSTRAINT ERROR: backend returned ok=false"
                 with ex ->
                     setOutput ("SAVE CONSTRAINT ERROR: " + ex.Message)
             } |> ignore
         )
-        
+
         this.FindControl<Button>("BtnConstraintRun").Click.Add(fun _ ->
             task {
                 try
-                    let graph = buildConstraintGraphDto canvas
-
-                    let! result = client.RunConstraintAsync(graph)
-
-                    if result.ok then
-                        storeConstraintResult result
-                        refreshConstraintVisualStates canvas
-                        setOutput (formatConstraintResult result)
-
-                        match selectedBlock with
-                        | Some b -> showInspectorForBlock canvas b
-                        | None -> ()
+                    if currentMode <> Constraint then
+                        setOutput "You are not currently in Constraint mode."
                     else
-                        setOutput "Constraint run returned ok=false."
+                        let graph = buildConstraintGraphDto canvas
 
-                with ex ->
-                    setOutput ("CONSTRAINT RUN ERROR: " + ex.Message)
-            } |> ignore
-        )
-        
-        this.FindControl<Button>("BtnListConstraints").Click.Add(fun _ ->
-            task {
-                try
-                    let! res = client.ListConstraintAsync()
-
-                    if res.ok then
-                        let text =
-                            res.items
-                            |> List.map (fun i ->
-                                sprintf "Id=%s | blocks=%d | wires=%d | known=%d"
-                                    i.id i.blockCount i.wireCount i.knownValueCount)
-                            |> String.concat Environment.NewLine
-
-                        setOutput (if String.IsNullOrWhiteSpace(text) then "No saved constraint graphs." else text)
-                    else
-                        setOutput "LIST CONSTRAINTS ERROR: backend returned ok=false"
-                with ex ->
-                    setOutput ("LIST CONSTRAINTS ERROR: " + ex.Message)
-            } |> ignore
-        )
-
-        this.FindControl<Button>("BtnLoadConstraint").Click.Add(fun _ ->
-            task {
-                try
-                    let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
-
-                    if String.IsNullOrWhiteSpace(idText) then
-                        setOutput "Upiši constraint graph id."
-                    else
-                        let! res = client.GetConstraintAsync(idText)
-
-                        if res.ok then
-                            loadConstraintGraphToCanvas res.graph.graph
-                            setOutput (sprintf "Constraint graph loaded: %s" res.graph.meta.id)
-                        else
-                            setOutput "LOAD CONSTRAINT ERROR: backend returned ok=false"
-                with ex ->
-                    setOutput ("LOAD CONSTRAINT ERROR: " + ex.Message)
-            } |> ignore
-        )
-        
-        this.FindControl<Button>("BtnRunSavedConstraint").Click.Add(fun _ ->
-            task {
-                try
-                    let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
-
-                    if String.IsNullOrWhiteSpace(idText) then
-                        setOutput "Upiši constraint graph id."
-                    else
-                        let! result = client.RunSavedConstraintAsync(idText)
+                        let! result = client.RunConstraintAsync(graph)
 
                         if result.ok then
                             storeConstraintResult result
@@ -1084,12 +1174,88 @@ type MainWindow() as this =
                             | Some b -> showInspectorForBlock canvas b
                             | None -> ()
                         else
-                            setOutput "RUN SAVED CONSTRAINT ERROR: backend returned ok=false"
+                            setOutput "Constraint run returned ok=false."
+
+                with ex ->
+                    setOutput ("CONSTRAINT RUN ERROR: " + ex.Message)
+            } |> ignore
+        )
+
+        this.FindControl<Button>("BtnListConstraints").Click.Add(fun _ ->
+            task {
+                try
+                    if currentMode <> Constraint then
+                        setOutput "You are not currently in Constraint mode."
+                    else
+                        let! res = client.ListConstraintAsync()
+
+                        if res.ok then
+                            let text =
+                                res.items
+                                |> List.map (fun i ->
+                                    sprintf "Id=%s | blocks=%d | wires=%d | known=%d"
+                                        i.id i.blockCount i.wireCount i.knownValueCount)
+                                |> String.concat Environment.NewLine
+
+                            setOutput (if String.IsNullOrWhiteSpace(text) then "No saved constraint graphs." else text)
+                        else
+                            setOutput "LIST CONSTRAINTS ERROR: backend returned ok=false"
+                with ex ->
+                    setOutput ("LIST CONSTRAINTS ERROR: " + ex.Message)
+            } |> ignore
+        )
+
+        this.FindControl<Button>("BtnLoadConstraint").Click.Add(fun _ ->
+            task {
+                try
+                    if currentMode <> Constraint then
+                        setOutput "You are not currently in Constraint mode."
+                    else
+                        let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
+
+                        if String.IsNullOrWhiteSpace(idText) then
+                            setOutput "Enter a constraint graph ID."
+                        else
+                            let! res = client.GetConstraintAsync(idText)
+
+                            if res.ok then
+                                loadConstraintGraphToCanvas res.graph.graph
+                                setOutput (sprintf "Constraint graph loaded: %s" res.graph.meta.id)
+                            else
+                                setOutput "LOAD CONSTRAINT ERROR: backend returned ok=false"
+                with ex ->
+                    setOutput ("LOAD CONSTRAINT ERROR: " + ex.Message)
+            } |> ignore
+        )
+
+        this.FindControl<Button>("BtnRunSavedConstraint").Click.Add(fun _ ->
+            task {
+                try
+                    if currentMode <> Constraint then
+                        setOutput "You are not currently in Constraint mode."
+                    else
+                        let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
+
+                        if String.IsNullOrWhiteSpace(idText) then
+                            setOutput "Enter a constraint graph ID."
+                        else
+                            let! result = client.RunSavedConstraintAsync(idText)
+
+                            if result.ok then
+                                storeConstraintResult result
+                                refreshConstraintVisualStates canvas
+                                setOutput (formatConstraintResult result)
+
+                                match selectedBlock with
+                                | Some b -> showInspectorForBlock canvas b
+                                | None -> ()
+                            else
+                                setOutput "RUN SAVED CONSTRAINT ERROR: backend returned ok=false"
                 with ex ->
                     setOutput ("RUN SAVED CONSTRAINT ERROR: " + ex.Message)
             } |> ignore
         )
-        
+
         canvas.PointerMoved.Add(fun args ->
             let p = args.GetPosition(canvas)
 
@@ -1121,5 +1287,5 @@ type MainWindow() as this =
                 | None -> ()
                 | Some _ -> cancelConnect canvas
         )
-        
-        
+
+        setMode Simulation

@@ -1,13 +1,20 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SimulinkClone.App.Controls.BlockControl"
-             Width="160" Height="80">
+             Width="176"
+             Height="92">
 
-  <Grid ColumnDefinitions="18,*,18"
+  <UserControl.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI, Inter, Arial"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="22,*,22"
         RowDefinitions="*"
         Background="Transparent">
 
-    <!-- INPUT side (2 ports stacked) -->
+    <!-- LEFT PORTS -->
     <Grid Grid.Column="0"
           RowDefinitions="*,*"
           VerticalAlignment="Center"
@@ -15,29 +22,33 @@
           Background="Transparent">
 
       <Border Grid.Row="0"
-              Width="18" Height="18"
+              Width="22"
+              Height="22"
               Background="Transparent"
-              Margin="0,6,0,6">
+              Margin="0,8,0,8">
         <Border Name="InputPort1"
-                Width="12" Height="12"
+                Width="12"
+                Height="12"
                 CornerRadius="6"
-                Background="#3a3a3a"
-                BorderBrush="#9aa0a6"
-                BorderThickness="1"
+                Background="#1B2230"
+                BorderBrush="#91A4C3"
+                BorderThickness="1.4"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"/>
       </Border>
 
       <Border Grid.Row="1"
-              Width="18" Height="18"
+              Width="22"
+              Height="22"
               Background="Transparent"
-              Margin="0,6,0,6">
+              Margin="0,8,0,8">
         <Border Name="InputPort2"
-                Width="12" Height="12"
+                Width="12"
+                Height="12"
                 CornerRadius="6"
-                Background="#3a3a3a"
-                BorderBrush="#9aa0a6"
-                BorderThickness="1"
+                Background="#1B2230"
+                BorderBrush="#91A4C3"
+                BorderThickness="1.4"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"/>
       </Border>
@@ -45,49 +56,94 @@
     </Grid>
 
     <!-- BODY -->
-    <Border Name="Body"
-            Grid.Column="1"
-            CornerRadius="10"
-            Background="#2b2b2b"
-            BorderBrush="#555"
-            BorderThickness="1"
-            Padding="10">
+    <Border Grid.Column="1"
+            CornerRadius="14"
+            Background="#1A1F2A"
+            BorderBrush="#3A465A"
+            BorderThickness="1.2"
+            Padding="0">
 
-      <StackPanel Spacing="4">
-        <!-- Title row with icon -->
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Name="TitleIcon"
-                     Text="■"
-                     Foreground="#eaeaea"
-                     FontSize="14"
-                     VerticalAlignment="Center"/>
-          <TextBlock Name="TitleText"
-                     Text="Block"
-                     Foreground="White"
-                     FontSize="14"
-                     VerticalAlignment="Center"/>
-        </StackPanel>
+      <Grid RowDefinitions="3,*,Auto">
 
-        <TextBlock Name="ParamText"
-                   Text=""
-                   Foreground="#cfcfcf"
-                   FontSize="12"/>
-      </StackPanel>
+        <!-- top accent line -->
+        <Border Name="AccentBar"
+                Grid.Row="0"
+                Background="#3B82F6"
+                CornerRadius="14,14,0,0"/>
 
+        <!-- content -->
+        <Grid Grid.Row="1"
+              Margin="12,10,12,6"
+              RowDefinitions="Auto,Auto"
+              ColumnDefinitions="Auto,*">
+
+          <!-- icon -->
+          <Border Width="26"
+                  Height="26"
+                  CornerRadius="8"
+                  Background="#111827"
+                  BorderBrush="#334155"
+                  BorderThickness="1"
+                  VerticalAlignment="Top"
+                  HorizontalAlignment="Left">
+            <TextBlock Name="TitleIcon"
+                       Text="■"
+                       Foreground="#EAF2FF"
+                       FontSize="13"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"/>
+          </Border>
+
+          <!-- title -->
+          <StackPanel Grid.Column="1"
+                      Margin="10,0,0,0"
+                      Spacing="2">
+            <TextBlock Name="TitleText"
+                       Text="Block"
+                       Foreground="White"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"/>
+
+            <TextBlock Text="Processing node"
+                       Foreground="#7F8CA3"
+                       FontSize="11"/>
+          </StackPanel>
+        </Grid>
+
+        <!-- parameter area -->
+        <Border Grid.Row="2"
+                Margin="12,0,12,12"
+                Padding="8,6"
+                CornerRadius="10"
+                Background="#11161F"
+                BorderBrush="#2A3444"
+                BorderThickness="1">
+          <TextBlock Name="ParamText"
+                     Text=""
+                     Foreground="#D3DAE6"
+                     FontSize="12"
+                     TextWrapping="Wrap"/>
+        </Border>
+
+      </Grid>
     </Border>
 
-    <!-- OUTPUT -->
+    <!-- RIGHT PORT -->
     <Border Grid.Column="2"
-            Width="18" Height="18"
+            Width="22"
+            Height="22"
             Background="Transparent"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
       <Border Name="OutputPort"
-              Width="12" Height="12"
+              Width="12"
+              Height="12"
               CornerRadius="6"
-              Background="#3a3a3a"
-              BorderBrush="#9aa0a6"
-              BorderThickness="1"
+              Background="#1B2230"
+              BorderBrush="#91A4C3"
+              BorderThickness="1.4"
               VerticalAlignment="Center"
               HorizontalAlignment="Center"/>
     </Border>

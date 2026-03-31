@@ -548,7 +548,25 @@ module Program =
                 |> List.map (fun (id, xs) -> {| id = id; samples = List.ofSeq xs |})
 
             Results.Ok({| ok = true; series = series |})
-    
+
+    let private deleteGraph (id: string) =
+        ensureStorage()
+        let path = graphPath id
+        if File.Exists(path) then
+            File.Delete(path)
+            true
+        else
+            false
+
+    let private deleteConstraintGraph (id: string) =
+        ensureConstraintStorage()
+        let path = constraintGraphPath id
+        if File.Exists(path) then
+            File.Delete(path)
+            true
+        else
+            false
+        
     [<EntryPoint>]
     let main args =
 
@@ -618,6 +636,16 @@ module Program =
                 match tryReadGraph id with
                 | None -> Results.NotFound({| ok = false; errors = [ "Graph not found." ] |})
                 | Some g -> Results.Ok({| ok = true; graph = g |})
+            )
+        ) |> ignore
+        
+        app.MapDelete(
+            "/api/ui/graphs/{id}",
+            Func<string, IResult>(fun id ->
+                if deleteGraph id then
+                    Results.Ok({| ok = true; id = id |})
+                else
+                    Results.NotFound({| ok = false; errors = [ "Graph not found." ] |})
             )
         ) |> ignore
 
@@ -771,6 +799,16 @@ module Program =
             )
         ) |> ignore
         
+        app.MapDelete(
+            "/api/constraint/graphs/{id}",
+            Func<string, IResult>(fun id ->
+                if deleteConstraintGraph id then
+                    Results.Ok({| ok = true; id = id |})
+                else
+                    Results.NotFound({| ok = false; errors = [ "Constraint graph not found." ] |})
+            )
+        ) |> ignore
+        
         app.MapPost(
             "/api/constraint/graphs/{id}/validate",
             Func<string, IResult>(fun id ->
@@ -811,7 +849,7 @@ module Program =
                             let result = ConstraintRuntime.solve graph
                             Results.Ok(toConstraintRunResponse result)
             )
-        ) |> ignore
+        ) |> ignore 
 
         app.Run()
         0

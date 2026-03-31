@@ -1,76 +1,324 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="SimulinkClone.App.MainWindow"
-        Width="1400" Height="800"
-        Title="SimulinkClone">
+        Width="1500"
+        Height="860"
+        MinWidth="1200"
+        MinHeight="720"
+        Title="SimulinkClone"
+        Background="#0f1115">
 
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="260,*,320">
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#E8ECF3"/>
+        </Style>
 
-        <Border Grid.RowSpan="2" Grid.Column="0" Background="#1e1e1e" Padding="12">
-            <StackPanel Spacing="8">
-                <TextBlock Text="Toolbox" FontSize="18" Foreground="White"/>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#232833"/>
+            <Setter Property="Foreground" Value="#F5F7FA"/>
+            <Setter Property="BorderBrush" Value="#3A4250"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
 
-                <!-- block creation -->
-                <Button Name="BtnConstant" Content="Constant" />
-                <Button Name="BtnAdd" Content="Summation (Add)" />
-                <Button Name="BtnSubtract" Content="Subtract" />
-                <Button Name="BtnMultiply" Content="Multiply" />
-                <Button Name="BtnGain" Content="Gain" />
-                <Button Name="BtnIntegrator" Content="Integrator" />
-                <Button Name="BtnConstraint" Content="Constraint" />
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#2C3442"/>
+            <Setter Property="BorderBrush" Value="#4B5A70"/>
+        </Style>
 
-                <Separator Margin="0,6,0,6"/>
+        <Style Selector="Button:pressed">
+            <Setter Property="Background" Value="#1E2430"/>
+        </Style>
 
-                <!-- constraint actions -->
-                <TextBlock Text="Constraint Graph" Foreground="White" FontWeight="SemiBold"/>
-                <Button Name="BtnConstraintRun" Content="Run Constraint" />
-                <Button Name="BtnSaveConstraint" Content="Save Constraint" />
-                <Button Name="BtnListConstraints" Content="List Constraints" />
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#151A22"/>
+            <Setter Property="Foreground" Value="#F5F7FA"/>
+            <Setter Property="BorderBrush" Value="#313948"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
 
-                <TextBox Name="TxtConstraintGraphId"
-                         Watermark="constraint graph id" />
+        <Style Selector="Separator">
+            <Setter Property="Background" Value="#2A3140"/>
+            <Setter Property="Height" Value="1"/>
+        </Style>
+    </Window.Styles>
 
-                <Button Name="BtnLoadConstraint" Content="Load Constraint" />
-                <Button Name="BtnRunSavedConstraint" Content="Run Saved Constraint" />
+    <Grid ColumnDefinitions="280,*,340" RowDefinitions="*">
 
-                <Separator Margin="0,6,0,6"/>
+        <!-- LEFT SIDEBAR -->
+        <Border Grid.Column="0"
+                Margin="14"
+                CornerRadius="18"
+                Background="#151922"
+                BorderBrush="#2A3140"
+                BorderThickness="1">
+            <Grid RowDefinitions="Auto,*,Auto">
 
-                <!-- service -->
-                <Button x:Name="BtnPing" Content="Ping Service (/health)" Width="200"/>
+                <StackPanel Margin="18,18,18,10" Spacing="6">
+                    <TextBlock Text="SimulinkClone"
+                               FontSize="22"
+                               FontWeight="Bold"/>
+                    <TextBlock Text="Block editor and simulation workspace"
+                               FontSize="12"
+                               Foreground="#99A3B5"/>
+                </StackPanel>
 
-                <!-- output -->
-                <TextBox x:Name="TxtOutput"
-                         Height="160"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         IsReadOnly="True"/>
-            </StackPanel>
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="18,0,18,18" Spacing="14">
+
+                        <Border Background="#10151D"
+                                BorderBrush="#242B38"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="14">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Toolbox"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+                                <TextBlock Text="Simulation blocks"
+                                           FontSize="12"
+                                           Foreground="#8E99AC"/>
+
+                                <Button Name="BtnConstant" Content="Constant"/>
+                                <Button Name="BtnAdd" Content="Summation (Add)"/>
+                                <Button Name="BtnGain" Content="Gain"/>
+                                <Button Name="BtnIntegrator" Content="Integrator"/>
+
+                                <Separator Margin="0,6,0,6"/>
+
+                                <TextBlock Text="Constraint blocks"
+                                           FontSize="12"
+                                           Foreground="#8E99AC"/>
+
+                                <Button Name="BtnSubtract" Content="Subtract"/>
+                                <Button Name="BtnMultiply" Content="Multiply"/>
+                                <Button Name="BtnConstraint" Content="Constraint"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#10151D"
+                                BorderBrush="#242B38"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="14">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Constraint Graph"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+                                <TextBlock Text="Save, load, and run constraint models"
+                                           FontSize="12"
+                                           Foreground="#8E99AC"/>
+
+                                <Button Name="BtnConstraintRun" Content="Run Constraint"/>
+                                <Button Name="BtnSaveConstraint" Content="Save Constraint"/>
+                                <Button Name="BtnListConstraints" Content="List Constraints"/>
+
+                                <TextBox Name="TxtConstraintGraphId"
+                                         Watermark="Constraint graph ID"/>
+
+                                <Button Name="BtnLoadConstraint" Content="Load Constraint"/>
+                                <Button Name="BtnRunSavedConstraint" Content="Run Saved Constraint"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#10151D"
+                                BorderBrush="#242B38"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="14">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Service and Output"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+
+                                <Button Name="BtnPing" Content="Ping Service (/health)"/>
+
+                                <TextBox Name="TxtOutput"
+                                         Height="180"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         IsReadOnly="True"
+                                         VerticalContentAlignment="Top"
+                                         FontFamily="Cascadia Code, Consolas, monospace"/>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Border Grid.Row="2"
+                        Margin="18,0,18,18"
+                        Padding="12"
+                        Background="#10151D"
+                        BorderBrush="#242B38"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <TextBlock Text="Tip: select a mode in the top bar, then add blocks and connect them on the canvas."
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="#96A0B3"/>
+                </Border>
+            </Grid>
         </Border>
 
-        <Border Grid.Row="0" Grid.Column="1" Background="#2a2a2a" Padding="10">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Name="BtnRun" Content="Run" />
-                <Button Content="Stop" />
-                <TextBlock Foreground="White" VerticalAlignment="Center"/>
-            </StackPanel>
-        </Border>
+        <!-- CENTER -->
+        <Grid Grid.Column="1" Margin="0,14,0,14" RowDefinitions="Auto,*">
 
-        <Border Grid.Row="1" Grid.Column="1" Background="#111">
-            <Canvas Name="EditorCanvas"
-                    Background="Transparent" />
-        </Border>
+            <!-- TOP BAR -->
+            <Border Grid.Row="0"
+                    Margin="0,0,14,14"
+                    CornerRadius="18"
+                    Background="#151922"
+                    BorderBrush="#2A3140"
+                    BorderThickness="1"
+                    Padding="14">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
 
-        <Border Grid.RowSpan="2" Grid.Column="2" Background="#161616" Padding="12">
-            <StackPanel Spacing="10">
-                <TextBlock Text="Inspector" FontSize="18" Foreground="White"/>
-                <StackPanel Name="InspectorHost" Spacing="8"/>
-                <Separator Margin="0,8,0,8"/>
-                <TextBlock Text="Hint:" Foreground="#bdbdbd"/>
-                <TextBlock Text="Klikni blok na canvasu da vidiš njegov UI ovdje desno."
-                           TextWrapping="Wrap"
-                           Foreground="#8f8f8f"/>
-            </StackPanel>
-        </Border>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Name="BtnRun"
+                                Content="Run"
+                                MinWidth="90"
+                                Background="#1F5EFF"
+                                BorderBrush="#3A78FF"/>
 
+                        <Button Content="Stop"
+                                MinWidth="90"
+                                Background="#2A3140"
+                                BorderBrush="#3E4757"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            Margin="16,0,0,0"
+                            Padding="12,0,0,0"
+                            BorderBrush="#252C39"
+                            BorderThickness="1,0,0,0"/>
+
+                    <StackPanel Grid.Column="2"
+                                Margin="20,0,0,0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="10">
+                        <TextBlock Text="Editor Mode"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="#C8D0DD"/>
+
+                        <Border Background="#10151D"
+                                BorderBrush="#293140"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="6">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Name="BtnSimulationMode"
+                                        Content="Simulation"
+                                        Width="130"
+                                        Background="#2563EB"
+                                        BorderBrush="#4B86FF"/>
+
+                                <Button Name="BtnConstraintMode"
+                                        Content="Constraint"
+                                        Width="130"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                VerticalAlignment="Center">
+                        <Border Background="#0F141B"
+                                BorderBrush="#293140"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="10,6">
+                            <TextBlock Text="Workspace"
+                                       Foreground="#8FA1BF"
+                                       FontSize="12"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- EDITOR SURFACE -->
+            <Border Grid.Row="1"
+                    Margin="0,0,14,0"
+                    CornerRadius="18"
+                    Background="#0D1016"
+                    BorderBrush="#2A3140"
+                    BorderThickness="1"
+                    ClipToBounds="True">
+                <Grid>
+                    <Canvas IsHitTestVisible="False">
+                        <Rectangle Width="4000"
+                                   Height="4000"
+                                   Fill="#0D1016"/>
+                    </Canvas>
+
+                    <Canvas Name="EditorCanvas"
+                            Background="#0D1016"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- RIGHT INSPECTOR -->
+        <Border Grid.Column="2"
+                Margin="0,14,14,14"
+                CornerRadius="18"
+                Background="#151922"
+                BorderBrush="#2A3140"
+                BorderThickness="1">
+            <Grid RowDefinitions="Auto,*,Auto">
+
+                <StackPanel Margin="18,18,18,10" Spacing="6">
+                    <TextBlock Text="Inspector"
+                               FontSize="20"
+                               FontWeight="Bold"/>
+                    <TextBlock Text="Selected block properties and parameters"
+                               FontSize="12"
+                               Foreground="#99A3B5"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1"
+                              Margin="18,0,18,12"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Border Background="#10151D"
+                            BorderBrush="#242B38"
+                            BorderThickness="1"
+                            CornerRadius="14"
+                            Padding="14">
+                        <StackPanel Name="InspectorHost" Spacing="8"/>
+                    </Border>
+                </ScrollViewer>
+
+                <Border Grid.Row="2"
+                        Margin="18,0,18,18"
+                        Padding="14"
+                        Background="#10151D"
+                        BorderBrush="#242B38"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Hint"
+                                   FontWeight="SemiBold"
+                                   Foreground="#D9E1EC"/>
+                        <TextBlock Text="Click a block on the canvas to inspect it. Double-click a block to open its edit dialog."
+                                   TextWrapping="Wrap"
+                                   FontSize="12"
+                                   Foreground="#8F9AAD"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
