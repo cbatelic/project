@@ -179,6 +179,7 @@ type MainWindow() as this =
             btnConstant.IsVisible <- true
             btnAdd.IsVisible <- true
             btnGain.IsVisible <- true
+            btnClearCanvas.IsVisible <- true
 
             // simulation-only block buttons
             btnIntegrator.IsVisible <- true
@@ -190,7 +191,6 @@ type MainWindow() as this =
 
             // simulation-only action buttons
             btnRun.IsVisible <- true
-            btnClearCanvas.IsVisible <- true
 
             // constraint-only action buttons
             btnSaveConstraint.IsVisible <- false
@@ -208,7 +208,8 @@ type MainWindow() as this =
             btnConstant.IsVisible <- true
             btnAdd.IsVisible <- true
             btnGain.IsVisible <- true
-
+            btnClearCanvas.IsVisible <- true
+            
             // simulation-only block buttons
             btnIntegrator.IsVisible <- false
 
@@ -219,7 +220,6 @@ type MainWindow() as this =
 
             // simulation-only action buttons
             btnRun.IsVisible <- false
-            btnClearCanvas.IsVisible <- false
 
             // constraint-only action buttons
             btnSaveConstraint.IsVisible <- true
