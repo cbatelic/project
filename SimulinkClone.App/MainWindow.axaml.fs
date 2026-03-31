@@ -917,9 +917,11 @@ type MainWindow() as this =
             constraintKnowns.Clear()
             constraintSolved.Clear()
             selectedBlock <- None
+            nextX <- 60.0
+            nextY <- 60.0
             clearInspector()
             setOutput ""
-
+            
         let setMode mode =
             currentMode <- mode
             clearCanvasGraph ()
@@ -1055,6 +1057,11 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
         this.FindControl<Button>("BtnGain").Click.Add(fun _ -> addBlock "gain")
+        
+        this.FindControl<Button>("BtnClearCanvas").Click.Add(fun _ ->
+            clearCanvasGraph ()
+            setOutput "Canvas cleared."
+        )     
 
         this.FindControl<Button>("BtnPing").Click.Add(fun _ ->
             task {

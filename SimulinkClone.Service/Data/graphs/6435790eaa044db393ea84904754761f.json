@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "id": "6435790eaa044db393ea84904754761f",
+    "createdAtUtc": "2026-03-24T15:45:15.1510312Z",
+    "updatedAtUtc": "2026-03-24T15:45:15.1510312Z"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "7156e00b35644d14be7c56d4e56b3b51",
+        "kind": "constant",
+        "constant": 50,
+        "x": 60,
+        "y": 60
+      },
+      {
+        "id": "26af83741e644c2984e41fad5024ab5a",
+        "kind": "constant",
+        "constant": 10,
+        "x": 86,
+        "y": 298
+      },
+      {
+        "id": "ada7b097d3ec44d591dfa55d73067b36",
+        "kind": "add",
+        "constant": null,
+        "x": 395,
+        "y": 162
+      },
+      {
+        "id": "5a48c87d41f14053b877e013422af958",
+        "kind": "integrator",
+        "constant": 0,
+        "x": 826,
+        "y": 170
+      }
+    ],
+    "edges": [
+      {
+        "fromId": "7156e00b35644d14be7c56d4e56b3b51",
+        "toId": "ada7b097d3ec44d591dfa55d73067b36",
+        "toPort": 1
+      },
+      {
+        "fromId": "26af83741e644c2984e41fad5024ab5a",
+        "toId": "ada7b097d3ec44d591dfa55d73067b36",
+        "toPort": 2
+      },
+      {
+        "fromId": "ada7b097d3ec44d591dfa55d73067b36",
+        "toId": "5a48c87d41f14053b877e013422af958",
+        "toPort": 1
+      }
+    ]
+  }
+}

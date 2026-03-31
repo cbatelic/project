@@ -194,6 +194,12 @@
                                 MinWidth="90"
                                 Background="#2A3140"
                                 BorderBrush="#3E4757"/>
+
+                        <Button Name="BtnClearCanvas"
+                                Content="Clear Canvas"
+                                MinWidth="120"
+                                Background="#3A2230"
+                                BorderBrush="#7C3A52"/>
                     </StackPanel>
 
                     <Border Grid.Column="1"

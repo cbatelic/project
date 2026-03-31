@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "id": "c793ef1688f04619af91f1ba7b68d191",
+    "createdAtUtc": "2026-03-24T16:26:15.7031719Z",
+    "updatedAtUtc": "2026-03-24T16:26:15.7031719Z"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "16fe499da76e4b65be64285478708fd0",
+        "kind": "constant",
+        "constant": 1,
+        "x": 60,
+        "y": 60
+      },
+      {
+        "id": "e42e53ef57894791b6f5a270d6c0a5c1",
+        "kind": "constant",
+        "constant": 1,
+        "x": 68,
+        "y": 201
+      },
+      {
+        "id": "859813f1c8ea4d4d903282f58debc276",
+        "kind": "add",
+        "constant": null,
+        "x": 430,
+        "y": 135
+      }
+    ],
+    "edges": [
+      {
+        "fromId": "16fe499da76e4b65be64285478708fd0",
+        "toId": "859813f1c8ea4d4d903282f58debc276",
+        "toPort": 1
+      },
+      {
+        "fromId": "e42e53ef57894791b6f5a270d6c0a5c1",
+        "toId": "859813f1c8ea4d4d903282f58debc276",
+        "toPort": 2
+      }
+    ]
+  }
+}

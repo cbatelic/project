@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "id": "02c7dd646f1544b9a4b79d1e0b2c570e",
+    "createdAtUtc": "2026-03-22T21:06:48.162178Z",
+    "updatedAtUtc": "2026-03-22T21:06:48.162178Z"
+  },
+  "graph": {
+    "blocks": [
+      {
+        "id": "6640ad9020f24c038ac412dabdcec195",
+        "kind": "constant",
+        "constantValue": 50,
+        "x": 60,
+        "y": 60
+      },
+      {
+        "id": "0f66d9e14d404498898a973910d92bce",
+        "kind": "constant",
+        "constantValue": 18,
+        "x": 62,
+        "y": 210
+      },
+      {
+        "id": "1838876550194da78f39fc0c1d91abd4",
+        "kind": "constant",
+        "constantValue": 1.8,
+        "x": 317,
+        "y": 503
+      },
+      {
+        "id": "71624c330e7b45bcbf59984918264ecf",
+        "kind": "subtract",
+        "constantValue": null,
+        "x": 414,
+        "y": 141
+      },
+      {
+        "id": "2afbdd4ed2c54f8795241f2c810c0565",
+        "kind": "multiply",
+        "constantValue": null,
+        "x": 617,
+        "y": 303
+      }
+    ],
+    "wires": [
+      {
+        "fromBlockId": "6640ad9020f24c038ac412dabdcec195",
+        "fromTerminal": "Result",
+        "toBlockId": "71624c330e7b45bcbf59984918264ecf",
+        "toTerminal": "A"
+      },
+      {
+        "fromBlockId": "0f66d9e14d404498898a973910d92bce",
+        "fromTerminal": "Result",
+        "toBlockId": "71624c330e7b45bcbf59984918264ecf",
+        "toTerminal": "B"
+      },
+      {
+        "fromBlockId": "71624c330e7b45bcbf59984918264ecf",
+        "fromTerminal": "Result",
+        "toBlockId": "2afbdd4ed2c54f8795241f2c810c0565",
+        "toTerminal": "A"
+      },
+      {
+        "fromBlockId": "1838876550194da78f39fc0c1d91abd4",
+        "fromTerminal": "Result",
+        "toBlockId": "2afbdd4ed2c54f8795241f2c810c0565",
+        "toTerminal": "B"
+      }
+    ],
+    "knownValues": [
+      {
+        "blockId": "6640ad9020f24c038ac412dabdcec195",
+        "terminal": "Result",
+        "value": 50
+      },
+      {
+        "blockId": "0f66d9e14d404498898a973910d92bce",
+        "terminal": "Result",
+        "value": 18
+      },
+      {
+        "blockId": "1838876550194da78f39fc0c1d91abd4",
+        "terminal": "Result",
+        "value": 1.8
+      }
+    ]
+  }
+}
