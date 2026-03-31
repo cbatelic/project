@@ -161,6 +161,8 @@ type MainWindow() as this =
         let btnGain = this.FindControl<Button>("BtnGain")
 
         let btnRun = this.FindControl<Button>("BtnRun")
+        let btnClearCanvas = this.FindControl<Button>("BtnClearCanvas")
+
         let btnSaveConstraint = this.FindControl<Button>("BtnSaveConstraint")
         let btnConstraintRun = this.FindControl<Button>("BtnConstraintRun")
         let btnListConstraints = this.FindControl<Button>("BtnListConstraints")
@@ -173,45 +175,59 @@ type MainWindow() as this =
             btnSimulationMode.Background <- SolidColorBrush(Color.Parse("#2563eb"))
             btnConstraintMode.Background <- SolidColorBrush(Color.Parse("#3a3a3a"))
 
-            btnConstant.IsEnabled <- true
-            btnAdd.IsEnabled <- true
-            btnGain.IsEnabled <- true
-            btnIntegrator.IsEnabled <- true
+            // shared block buttons
+            btnConstant.IsVisible <- true
+            btnAdd.IsVisible <- true
+            btnGain.IsVisible <- true
 
-            btnSubtract.IsEnabled <- false
-            btnMultiply.IsEnabled <- false
-            btnConstraint.IsEnabled <- false
+            // simulation-only block buttons
+            btnIntegrator.IsVisible <- true
 
-            btnRun.IsEnabled <- true
+            // constraint-only block buttons
+            btnSubtract.IsVisible <- false
+            btnMultiply.IsVisible <- false
+            btnConstraint.IsVisible <- false
 
-            btnSaveConstraint.IsEnabled <- false
-            btnConstraintRun.IsEnabled <- false
-            btnListConstraints.IsEnabled <- false
-            btnLoadConstraint.IsEnabled <- false
-            btnRunSavedConstraint.IsEnabled <- false
-            txtConstraintGraphId.IsEnabled <- false
+            // simulation-only action buttons
+            btnRun.IsVisible <- true
+            btnClearCanvas.IsVisible <- true
+
+            // constraint-only action buttons
+            btnSaveConstraint.IsVisible <- false
+            btnConstraintRun.IsVisible <- false
+            btnListConstraints.IsVisible <- false
+            btnLoadConstraint.IsVisible <- false
+            btnRunSavedConstraint.IsVisible <- false
+            txtConstraintGraphId.IsVisible <- false
 
         | Constraint ->
             btnSimulationMode.Background <- SolidColorBrush(Color.Parse("#3a3a3a"))
             btnConstraintMode.Background <- SolidColorBrush(Color.Parse("#2563eb"))
 
-            btnConstant.IsEnabled <- true
-            btnAdd.IsEnabled <- true
-            btnGain.IsEnabled <- true
-            btnSubtract.IsEnabled <- true
-            btnMultiply.IsEnabled <- true
-            btnConstraint.IsEnabled <- true
+            // shared block buttons
+            btnConstant.IsVisible <- true
+            btnAdd.IsVisible <- true
+            btnGain.IsVisible <- true
 
-            btnIntegrator.IsEnabled <- false
+            // simulation-only block buttons
+            btnIntegrator.IsVisible <- false
 
-            btnRun.IsEnabled <- false
+            // constraint-only block buttons
+            btnSubtract.IsVisible <- true
+            btnMultiply.IsVisible <- true
+            btnConstraint.IsVisible <- true
 
-            btnSaveConstraint.IsEnabled <- true
-            btnConstraintRun.IsEnabled <- true
-            btnListConstraints.IsEnabled <- true
-            btnLoadConstraint.IsEnabled <- true
-            btnRunSavedConstraint.IsEnabled <- true
-            txtConstraintGraphId.IsEnabled <- true
+            // simulation-only action buttons
+            btnRun.IsVisible <- false
+            btnClearCanvas.IsVisible <- false
+
+            // constraint-only action buttons
+            btnSaveConstraint.IsVisible <- true
+            btnConstraintRun.IsVisible <- true
+            btnListConstraints.IsVisible <- true
+            btnLoadConstraint.IsVisible <- true
+            btnRunSavedConstraint.IsVisible <- true
+            txtConstraintGraphId.IsVisible <- true
 
     let tryParseOptionalFloat (text: string) =
         let t = if isNull text then "" else text.Trim()
@@ -852,7 +868,6 @@ type MainWindow() as this =
                     sourceOutput <- None
                     tempConn <- None
                 | _ -> ()
-
             )
 
             b.InputPort2Clicked.Add(fun target ->
@@ -921,7 +936,7 @@ type MainWindow() as this =
             nextY <- 60.0
             clearInspector()
             setOutput ""
-            
+
         let setMode mode =
             currentMode <- mode
             clearCanvasGraph ()
@@ -1057,11 +1072,11 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
         this.FindControl<Button>("BtnGain").Click.Add(fun _ -> addBlock "gain")
-        
+
         this.FindControl<Button>("BtnClearCanvas").Click.Add(fun _ ->
             clearCanvasGraph ()
             setOutput "Canvas cleared."
-        )     
+        )
 
         this.FindControl<Button>("BtnPing").Click.Add(fun _ ->
             task {
@@ -1169,7 +1184,6 @@ type MainWindow() as this =
                         setOutput "You are not currently in Constraint mode."
                     else
                         let graph = buildConstraintGraphDto canvas
-
                         let! result = client.RunConstraintAsync(graph)
 
                         if result.ok then

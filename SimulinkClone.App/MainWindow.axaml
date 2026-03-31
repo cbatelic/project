@@ -190,11 +190,6 @@
                                 Background="#1F5EFF"
                                 BorderBrush="#3A78FF"/>
 
-                        <Button Content="Stop"
-                                MinWidth="90"
-                                Background="#2A3140"
-                                BorderBrush="#3E4757"/>
-
                         <Button Name="BtnClearCanvas"
                                 Content="Clear Canvas"
                                 MinWidth="120"
