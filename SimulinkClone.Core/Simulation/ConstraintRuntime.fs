@@ -178,7 +178,13 @@ module ConstraintRuntime =
 
             | _ ->
                 { state with Status = Underdetermined }
+        | ConstraintBlockKind.Monitor ->
+            let v = tryGetKnown "Value" values
 
+            match v with
+            | Some _ -> { state with Status = Ok }
+            | None -> { state with Status = Underdetermined }
+            
     let propagateWire (wire: ConstraintWire) (states: BlockRuntimeState list) =
         let fromBlock = findBlockState wire.FromRef.BlockId states
         let toBlock = findBlockState wire.ToRef.BlockId states
@@ -190,23 +196,29 @@ module ConstraintRuntime =
 
             match fromValue, toValue with
             | Known v, Unknown ->
-                let updatedValues = tb.Values |> Map.add wire.ToRef.Terminal (Known v)
+                let updatedValues =
+                    tb.Values |> Map.add wire.ToRef.Terminal (Known v)
+
                 updateBlockState tb.Block.Id updatedValues tb.Status states
+
+            | Unknown, Known v ->
+                let updatedValues =
+                    fb.Values |> Map.add wire.FromRef.Terminal (Known v)
+
+                updateBlockState fb.Block.Id updatedValues fb.Status states
 
             | Known v1, Known v2 ->
                 if approxEqual v1 v2 then
                     states
                 else
-                    let updatedStates =
-                        states
-                        |> List.map (fun s ->
-                            if s.Block.Id = tb.Block.Id then
-                                { s with Status = Error }
-                            else
-                                s)
-                    updatedStates
+                    states
+                    |> List.map (fun s ->
+                        if s.Block.Id = fb.Block.Id || s.Block.Id = tb.Block.Id then
+                            { s with Status = Error }
+                        else
+                            s)
 
-            | _ ->
+            | Unknown, Unknown ->
                 states
 
         | _ ->

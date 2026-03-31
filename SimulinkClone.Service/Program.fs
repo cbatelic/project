@@ -159,12 +159,16 @@ module Program =
         | "subtract" -> Some ConstraintBlockKind.Subtract
         | "multiply" -> Some ConstraintBlockKind.Multiply
         | "gain" -> Some ConstraintBlockKind.Gain
+        | "monitor" -> Some ConstraintBlockKind.Monitor
         | _ -> None
 
     let private terminalsForConstraintKind =
         function
         | ConstraintBlockKind.Constant ->
             [ { Name = "Result" } ]
+
+        | ConstraintBlockKind.Monitor ->
+            [ { Name = "Value" } ]
 
         | ConstraintBlockKind.Gain ->
             [ { Name = "A" }

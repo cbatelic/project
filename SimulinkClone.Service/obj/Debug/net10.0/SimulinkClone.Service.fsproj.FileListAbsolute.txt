@@ -152,3 +152,8 @@ C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\co
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\6435790eaa044db393ea84904754761f.json
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\8d68a13ca126480195c5c7e7fe6d3faf.json
 C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\c793ef1688f04619af91f1ba7b68d191.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\44b3b5da9da442a98cd676eb7781d151.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\4858e469a0314fb7b59f88856b496a46.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\7523befc3c1b47dba58e9b031600aeca.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\86d39496396349d29dfcab37dce6abdd.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\ed802c0a54834a46a9c530ff32dfdd63.json

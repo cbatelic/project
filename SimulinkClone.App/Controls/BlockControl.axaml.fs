@@ -15,24 +15,15 @@ type InputPortId =
 type BlockControl() as this =
     inherit UserControl()
 
-    // ---------------------------
-    // Events
-    // ---------------------------
     let outputPortClicked = Event<BlockControl>()
     let inputPort1Clicked = Event<BlockControl>()
     let inputPort2Clicked = Event<BlockControl>()
 
-    // ---------------------------
-    // Node state
-    // ---------------------------
     let mutable nodeId = Guid.NewGuid().ToString("N")
     let mutable kind = "constant"
     let mutable constantValue: float option = Some 1.0
     let mutable integratorInitial: float option = Some 0.0
 
-    // ---------------------------
-    // Safe UI access
-    // ---------------------------
     let tryFindTextBlock (name: string) =
         let c = this.FindControl<TextBlock>(name)
         if isNull c then None else Some c
@@ -41,9 +32,23 @@ type BlockControl() as this =
         let c = this.FindControl<Border>(name)
         if isNull c then None else Some c
 
+    let tryFindTextBox (name: string) =
+        let c = this.FindControl<TextBox>(name)
+        if isNull c then None else Some c
+
     let setTextIfExists (name: string) (value: string) =
         match tryFindTextBlock name with
         | Some tb -> tb.Text <- value
+        | None -> ()
+
+    let setTextBoxTextIfExists (name: string) (value: string) =
+        match tryFindTextBox name with
+        | Some tb -> tb.Text <- value
+        | None -> ()
+
+    let setBorderVisible (name: string) (value: bool) =
+        match tryFindBorder name with
+        | Some b -> b.IsVisible <- value
         | None -> ()
 
     let setBorderHighlight (b: Border) (onOff: bool) (color: IBrush) =
@@ -54,7 +59,7 @@ type BlockControl() as this =
             b.BorderThickness <- Thickness(1.4)
             b.BorderBrush <- SolidColorBrush(Color.Parse("#91A4C3"))
             b.Background <- SolidColorBrush(Color.Parse("#1B2230"))
-
+ 
     let hookHandledClick (c: Control) (fire: unit -> unit) =
         c.PointerPressed.Add(fun e ->
             e.Handled <- true
@@ -66,25 +71,33 @@ type BlockControl() as this =
         )
 
     let tryParseFloat (s: string) =
-        let s2 = if isNull s then "" else s
-        let ok, v =
-            Double.TryParse(
-                s2,
-                Globalization.NumberStyles.Float,
-                Globalization.CultureInfo.InvariantCulture
-            )
+        let s2 = if isNull s then "" else s.Trim()
 
-        if ok then Some v else None
+        if String.IsNullOrWhiteSpace(s2) then
+            None
+        else
+            let ok, v =
+                Double.TryParse(
+                    s2,
+                    Globalization.NumberStyles.Float,
+                    Globalization.CultureInfo.InvariantCulture
+                )
+
+            if ok then Some v else None
 
     let fmt (v: float) =
         v.ToString("0.###", Globalization.CultureInfo.InvariantCulture)
 
     let normalizeKind (k: string) =
         (if isNull k then "" else k).Trim().ToLowerInvariant()
-
-    // ---------------------------
-    // Icons
-    // ---------------------------
+    let updateSizeForKind () =
+        match normalizeKind kind with
+        | "monitor" ->
+            this.Width <- 210.0
+            this.Height <- 132.0
+        | _ ->
+            this.Width <- 210.0
+            this.Height <- 132.0
     let iconForKind (k: string) =
         match normalizeKind k with
         | "constant" -> "C"
@@ -94,6 +107,7 @@ type BlockControl() as this =
         | "integrator" -> "∫"
         | "gain" -> "k"
         | "constraint" -> "⎇"
+        | "monitor" -> "M"
         | _ -> "■"
 
     let titleForKind (k: string) =
@@ -105,12 +119,10 @@ type BlockControl() as this =
         | "integrator" -> "Integrator"
         | "gain" -> "Gain"
         | "constraint" -> "Constraint"
+        | "monitor" -> "Monitor"
         | other when other.Length > 0 -> other
         | _ -> "Block"
 
-    // ---------------------------
-    // Refresh block text
-    // ---------------------------
     let refreshText () =
         let k = normalizeKind kind
 
@@ -134,29 +146,32 @@ type BlockControl() as this =
                 | Some v -> sprintf "k = %s" (fmt v)
                 | None -> "k = ?"
 
-            | "add" ->
-                "A + B"
-
-            | "subtract" ->
-                "A - B"
-
-            | "multiply" ->
-                "A × B"
-
-            | "constraint" ->
-                "Constraint node"
-
-            | _ ->
-                ""
-
+            | "add" -> "A + B = R"
+            | "subtract" -> "A - B = R"
+            | "multiply" -> "A × B = R"
+            | "constraint" -> "Constraint node"
+            | "monitor" -> "Value"
+            | _ -> ""
+        updateSizeForKind ()
         setTextIfExists "ParamText" paramText
+        setTextIfExists "SimpleParamText" paramText
+        
+    let tryFindPath (name: string) =
+        let c = this.FindControl<Avalonia.Controls.Shapes.Path>(name)
+        if isNull c then None else Some c
+        
+    let setMonitorIconVisible (isVisible: bool) =
+        match tryFindPath "MonitorIcon" with
+        | Some p -> p.IsVisible <- isVisible
+        | None -> ()
 
-    // ---------------------------
-    // Double-click dialog
-    // ---------------------------
+        match tryFindTextBlock "TitleIcon" with
+        | Some tb -> tb.IsVisible <- not isVisible
+        | None -> ()
+
     let openParamDialog () =
         let k = normalizeKind kind
-
+        setMonitorIconVisible (k = "monitor")
         if k <> "constant" && k <> "integrator" && k <> "gain" then
             ()
         else
@@ -177,7 +192,6 @@ type BlockControl() as this =
             root.Margin <- Thickness(14.0)
 
             let hint = TextBlock()
-
             hint.Text <-
                 if k = "constant" then
                     "Enter constant value (use dot for decimals, e.g. 3.5)"
@@ -250,10 +264,8 @@ type BlockControl() as this =
             )
 
             match TopLevel.GetTopLevel(this) with
-            | :? Window as owner ->
-                win.ShowDialog(owner) |> ignore
-            | _ ->
-                win.Show()
+            | :? Window as owner -> win.ShowDialog(owner) |> ignore
+            | _ -> win.Show()
 
     do
         AvaloniaXamlLoader.Load(this)
@@ -276,9 +288,6 @@ type BlockControl() as this =
 
         refreshText ()
 
-    // ---------------------------
-    // API used by MainWindow
-    // ---------------------------
     member _.OutputPortClicked = outputPortClicked.Publish
     member _.InputPort1Clicked = inputPort1Clicked.Publish
     member _.InputPort2Clicked = inputPort2Clicked.Publish
@@ -290,16 +299,6 @@ type BlockControl() as this =
         match tryFindBorder "OutputPort" with
         | Some b -> setBorderHighlight b onOff Brushes.Gold
         | None -> ()
-        
-    member _.SetBodyVisual(backgroundHex: string, borderHex: string) =
-        let body = this.FindControl<Border>("Body")
-        if not (isNull body) then
-            body.Background <- SolidColorBrush(Color.Parse(backgroundHex))
-            body.BorderBrush <- SolidColorBrush(Color.Parse(borderHex))
-
-        let accent = this.FindControl<Border>("AccentBar")
-        if not (isNull accent) then
-            accent.Background <- SolidColorBrush(Color.Parse(borderHex))
 
     member _.SetInputHighlight(port: InputPortId, onOff: bool) =
         match port with
@@ -312,9 +311,56 @@ type BlockControl() as this =
             | Some b -> setBorderHighlight b onOff Brushes.OrangeRed
             | None -> ()
 
-    // ---------------------------
-    // Properties
-    // ---------------------------
+    member _.SetBodyVisual(backgroundHex: string, borderHex: string) =
+        match tryFindBorder "Body" with
+        | Some body ->
+            body.Background <- SolidColorBrush(Color.Parse(backgroundHex))
+            body.BorderBrush <- SolidColorBrush(Color.Parse(borderHex))
+        | None -> ()
+
+        match tryFindBorder "AccentBar" with
+        | Some accent ->
+            accent.Background <- SolidColorBrush(Color.Parse(borderHex))
+        | None -> ()
+
+    member _.SetConstraintUiVisible(isVisible: bool) =
+        setBorderVisible "ConstraintPanel" isVisible
+        setBorderVisible "SimpleParamPanel" (not isVisible)
+
+    member _.SetMonitorUiVisible(isVisible: bool) =
+        setBorderVisible "MonitorPanel" isVisible
+        setBorderVisible "SimpleParamPanel" (not isVisible)
+
+    member _.GetMonitorValue() =
+        match tryFindTextBox "MonitorInput" with
+        | Some tb -> tryParseFloat tb.Text
+        | None -> None
+
+    member _.HasMonitorInput() =
+        match tryFindTextBox "MonitorInput" with
+        | Some tb -> not (String.IsNullOrWhiteSpace(tb.Text))
+        | None -> false
+
+    member _.SetMonitorInputValue(value: float option) =
+        let text =
+            match value with
+            | Some v -> sprintf "%g" v
+            | None -> ""
+
+        setTextBoxTextIfExists "MonitorInput" text
+
+    member this.SetMonitorSolvedValue(value: float option) =
+        let text =
+            match value with
+            | Some v ->
+                if this.HasMonitorInput() then "" else sprintf "%g" v
+            | None -> ""
+
+        setTextIfExists "MonitorSolvedText" text
+
+    member _.ClearMonitorSolvedValue() =
+        setTextIfExists "MonitorSolvedText" ""
+
     member _.NodeId
         with get () = nodeId
         and set v = nodeId <- v

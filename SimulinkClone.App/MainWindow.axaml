@@ -92,6 +92,7 @@
                                 <Button Name="BtnAdd" Content="Summation (Add)"/>
                                 <Button Name="BtnGain" Content="Gain"/>
                                 <Button Name="BtnIntegrator" Content="Integrator"/>
+                                <Button Name="BtnMonitor" Content="Monitor"/>
 
                                 <Separator Margin="0,6,0,6"/>
 

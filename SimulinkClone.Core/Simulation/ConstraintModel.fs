@@ -9,6 +9,7 @@ type ConstraintBlockKind =
     | Subtract
     | Multiply
     | Gain
+    | Monitor
 
 type ConstraintTerminal =
     { Name: TerminalName }

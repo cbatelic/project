@@ -21,6 +21,7 @@ module ConstraintGraphValidation =
         | InvalidWireTargetTerminal of ConstraintBlockId * TerminalName
         | ConstantCannotHaveIncomingWire of ConstraintBlockId
         | GainCannotAcceptTerminal of ConstraintBlockId * TerminalName
+        | InvalidMonitorConfiguration of ConstraintBlockId
 
     type ConstraintGraphValidation =
         { Ok: bool
@@ -75,6 +76,9 @@ module ConstraintGraphValidation =
 
         | GainCannotAcceptTerminal (blockId, terminal) ->
             $"Gain block '{blockId}' cannot accept terminal '{terminal}'. Only terminal 'A' may be used as input."
+            
+        | InvalidMonitorConfiguration blockId ->
+            $"Monitor block '{blockId}' must define only terminal 'Value'."
 
     let private terminalNames (block: ConstraintBlock) =
         block.Terminals |> List.map (fun t -> t.Name)
@@ -86,7 +90,27 @@ module ConstraintGraphValidation =
         let e = expected |> Set.ofList
         let a = actual |> Set.ofList
         e = a
+    let private validSourceTerminal (block: ConstraintBlock) =
+        match block.Kind with
+        | ConstraintBlockKind.Monitor -> "Value"
+        | _ -> "Result"
 
+    let private isValidTargetTerminal (block: ConstraintBlock) (terminal: TerminalName) =
+        match block.Kind with
+        | ConstraintBlockKind.Monitor ->
+            terminal = "Value"
+
+        | ConstraintBlockKind.Gain ->
+            terminal = "A"
+
+        | ConstraintBlockKind.Add
+        | ConstraintBlockKind.Subtract
+        | ConstraintBlockKind.Multiply ->
+            terminal = "A" || terminal = "B"
+
+        | ConstraintBlockKind.Constant ->
+            false
+            
     let private isValidInputTerminal =
         function
         | "A"
@@ -122,11 +146,16 @@ module ConstraintGraphValidation =
                 if block.ConstantValue.IsNone || not (sameElements [ "A"; "Result" ] names) then
                     errors.Add(InvalidGainConfiguration block.Id)
 
+            | ConstraintBlockKind.Monitor ->
+                let names = terminalNames block
+                if not (sameElements [ "Value" ] names) then
+                    errors.Add(InvalidMonitorConfiguration block.Id)
+
             | ConstraintBlockKind.Add
             | ConstraintBlockKind.Subtract
             | ConstraintBlockKind.Multiply ->
                 ()
-
+                
         for wire in graph.Wires do
             if wire.FromRef.BlockId = wire.ToRef.BlockId then
                 errors.Add(SelfLoop (wire.FromRef.BlockId, wire.FromRef.Terminal, wire.ToRef.Terminal))
@@ -137,8 +166,10 @@ module ConstraintGraphValidation =
             | Some fromBlock ->
                 if not (hasTerminal wire.FromRef.Terminal fromBlock) then
                     errors.Add(UnknownFromTerminal (wire.FromRef.BlockId, wire.FromRef.Terminal))
-                elif wire.FromRef.Terminal <> "Result" then
-                    errors.Add(InvalidWireSourceTerminal (wire.FromRef.BlockId, wire.FromRef.Terminal))
+                else
+                    let expectedSource = validSourceTerminal fromBlock
+                    if wire.FromRef.Terminal <> expectedSource then
+                        errors.Add(InvalidWireSourceTerminal (wire.FromRef.BlockId, wire.FromRef.Terminal))
 
             match blockMap |> Map.tryFind wire.ToRef.BlockId with
             | None ->
@@ -147,7 +178,7 @@ module ConstraintGraphValidation =
                 if not (hasTerminal wire.ToRef.Terminal toBlock) then
                     errors.Add(UnknownToTerminal (wire.ToRef.BlockId, wire.ToRef.Terminal))
                 else
-                    if not (isValidInputTerminal wire.ToRef.Terminal) then
+                    if not (isValidTargetTerminal toBlock wire.ToRef.Terminal) then
                         errors.Add(InvalidWireTargetTerminal (wire.ToRef.BlockId, wire.ToRef.Terminal))
 
                     match toBlock.Kind with
@@ -158,6 +189,7 @@ module ConstraintGraphValidation =
                         if wire.ToRef.Terminal <> "A" then
                             errors.Add(GainCannotAcceptTerminal (toBlock.Id, wire.ToRef.Terminal))
 
+                    | ConstraintBlockKind.Monitor
                     | ConstraintBlockKind.Add
                     | ConstraintBlockKind.Subtract
                     | ConstraintBlockKind.Multiply ->

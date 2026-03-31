@@ -48,11 +48,6 @@ type TempConnection =
       ArrowSeg1: LineSegment
       ArrowSeg2: LineSegment }
 
-type ConstraintKnownEditor =
-    { mutable A: float option
-      mutable B: float option
-      mutable Result: float option }
-
 type ConstraintSolvedState =
     { Status: string
       Values: Map<string, float option> }
@@ -79,7 +74,6 @@ type MainWindow() as this =
     let mutable tempConn: TempConnection option = None
 
     let mutable selectedBlock: BlockControl option = None
-    let constraintKnowns = Dictionary<string, ConstraintKnownEditor>()
     let constraintSolved = Dictionary<string, ConstraintSolvedState>()
 
     let initXaml () =
@@ -139,14 +133,10 @@ type MainWindow() as this =
             b.SetBodyVisual("#312047", "#C084FC")
         | Some solved ->
             match solved.Status.Trim().ToLowerInvariant() with
-            | "ok" ->
-                b.SetBodyVisual("#1f3a2a", "#4ade80")
-            | "underdetermined" ->
-                b.SetBodyVisual("#4a3b10", "#facc15")
-            | "error" ->
-                b.SetBodyVisual("#4a1f1f", "#f87171")
-            | _ ->
-                b.SetBodyVisual("#312047", "#C084FC")
+            | "ok" -> b.SetBodyVisual("#1f3a2a", "#4ade80")
+            | "underdetermined" -> b.SetBodyVisual("#4a3b10", "#facc15")
+            | "error" -> b.SetBodyVisual("#4a1f1f", "#f87171")
+            | _ -> b.SetBodyVisual("#312047", "#C084FC")
 
     let setModeUi () =
         let btnSimulationMode = this.FindControl<Button>("BtnSimulationMode")
@@ -159,6 +149,7 @@ type MainWindow() as this =
         let btnIntegrator = this.FindControl<Button>("BtnIntegrator")
         let btnConstraint = this.FindControl<Button>("BtnConstraint")
         let btnGain = this.FindControl<Button>("BtnGain")
+        let btnMonitor = this.FindControl<Button>("BtnMonitor")
 
         let btnRun = this.FindControl<Button>("BtnRun")
         let btnClearCanvas = this.FindControl<Button>("BtnClearCanvas")
@@ -175,24 +166,20 @@ type MainWindow() as this =
             btnSimulationMode.Background <- SolidColorBrush(Color.Parse("#2563eb"))
             btnConstraintMode.Background <- SolidColorBrush(Color.Parse("#3a3a3a"))
 
-            // shared block buttons
             btnConstant.IsVisible <- true
             btnAdd.IsVisible <- true
             btnGain.IsVisible <- true
             btnClearCanvas.IsVisible <- true
 
-            // simulation-only block buttons
             btnIntegrator.IsVisible <- true
 
-            // constraint-only block buttons
             btnSubtract.IsVisible <- false
             btnMultiply.IsVisible <- false
             btnConstraint.IsVisible <- false
+            btnMonitor.IsVisible <- false
 
-            // simulation-only action buttons
             btnRun.IsVisible <- true
 
-            // constraint-only action buttons
             btnSaveConstraint.IsVisible <- false
             btnConstraintRun.IsVisible <- false
             btnListConstraints.IsVisible <- false
@@ -204,102 +191,26 @@ type MainWindow() as this =
             btnSimulationMode.Background <- SolidColorBrush(Color.Parse("#3a3a3a"))
             btnConstraintMode.Background <- SolidColorBrush(Color.Parse("#2563eb"))
 
-            // shared block buttons
             btnConstant.IsVisible <- true
             btnAdd.IsVisible <- true
             btnGain.IsVisible <- true
             btnClearCanvas.IsVisible <- true
-            
-            // simulation-only block buttons
+
             btnIntegrator.IsVisible <- false
 
-            // constraint-only block buttons
             btnSubtract.IsVisible <- true
             btnMultiply.IsVisible <- true
             btnConstraint.IsVisible <- true
+            btnMonitor.IsVisible <- true
 
-            // simulation-only action buttons
             btnRun.IsVisible <- false
 
-            // constraint-only action buttons
             btnSaveConstraint.IsVisible <- true
             btnConstraintRun.IsVisible <- true
             btnListConstraints.IsVisible <- true
             btnLoadConstraint.IsVisible <- true
             btnRunSavedConstraint.IsVisible <- true
             txtConstraintGraphId.IsVisible <- true
-
-    let tryParseOptionalFloat (text: string) =
-        let t = if isNull text then "" else text.Trim()
-
-        if String.IsNullOrWhiteSpace(t) then
-            None
-        else
-            match Double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture) with
-            | true, v -> Some v
-            | false, _ -> None
-
-    let formatOptionalFloat =
-        function
-        | Some v -> sprintf "%g" v
-        | None -> ""
-
-    let getOrCreateConstraintKnownEditor (blockId: string) =
-        match constraintKnowns.TryGetValue(blockId) with
-        | true, editor -> editor
-        | false, _ ->
-            let editor =
-                { A = None
-                  B = None
-                  Result = None }
-            constraintKnowns[blockId] <- editor
-            editor
-
-    let mkInputRow (label: string) (initialValue: string) (onChanged: string -> unit) =
-        let row = Grid()
-        row.ColumnDefinitions <- ColumnDefinitions("120,*")
-        row.Margin <- Thickness(0.0, 2.0, 0.0, 2.0)
-
-        let l = TextBlock()
-        l.Text <- label
-        l.Foreground <- SolidColorBrush(Color.Parse("#bdbdbd"))
-        l.VerticalAlignment <- VerticalAlignment.Center
-        Grid.SetColumn(l, 0)
-
-        let tb = TextBox()
-        tb.Text <- initialValue
-        tb.Watermark <- "leave empty = unknown"
-        tb.MinWidth <- 120.0
-        tb.HorizontalAlignment <- HorizontalAlignment.Stretch
-        tb.TextChanged.Add(fun _ -> onChanged tb.Text)
-        Grid.SetColumn(tb, 1)
-
-        row.Children.Add(l) |> ignore
-        row.Children.Add(tb) |> ignore
-        row
-
-    let addSolvedStateToInspector (host: StackPanel) (blockId: string) =
-        match tryGetSolvedState blockId with
-        | None -> ()
-        | Some solved ->
-            let sep = Separator()
-            sep.Margin <- Thickness(0.0, 8.0, 0.0, 8.0)
-            host.Children.Add(sep) |> ignore
-
-            host.Children.Add(mkLabel "Last solve result") |> ignore
-            host.Children.Add(mkRow "Status" solved.Status) |> ignore
-
-            let addValueRow terminal =
-                let valueText =
-                    match solved.Values |> Map.tryFind terminal |> Option.defaultValue None with
-                    | Some v -> sprintf "%g" v
-                    | None -> "?"
-
-                host.Children.Add(mkRow terminal valueText) |> ignore
-
-            addValueRow "A"
-            addValueRow "B"
-            addValueRow "Result"
 
     let kindOf (b: BlockControl) =
         let k = b.Kind
@@ -317,6 +228,27 @@ type MainWindow() as this =
             constraintSolved[block.id] <-
                 { Status = block.status
                   Values = values }
+
+    let applyConstraintSolvedValuesToBlocks (canvas: Canvas) =
+        canvas.Children
+        |> Seq.iter (fun c ->
+            match c with
+            | :? BlockControl as b ->
+                b.ClearMonitorSolvedValue()
+
+                match kindOf b with
+                | "monitor" ->
+                    match tryGetSolvedState b.NodeId with
+                    | Some solved ->
+                        let value =
+                            solved.Values
+                            |> Map.tryFind "Value"
+                            |> Option.defaultValue None
+
+                        b.SetMonitorSolvedValue(value)
+                    | None -> ()
+                | _ -> ()
+            | _ -> ())
 
     let showInspectorForBlock (canvas: Canvas) (b: BlockControl) =
         let host = this.FindControl<StackPanel>("InspectorHost")
@@ -344,7 +276,7 @@ type MainWindow() as this =
                 | Some v -> sprintf "%g" v
                 | None -> "-"
             host.Children.Add(mkRow "Value (C)" cTxt) |> ignore
-            host.Children.Add(mkMuted "Double-click block to edit (dialog).") |> ignore
+            host.Children.Add(mkMuted "Double-click block to edit the constant value.") |> ignore
 
         | "integrator" ->
             host.Children.Add(mkLabel "Integrator") |> ignore
@@ -353,70 +285,32 @@ type MainWindow() as this =
                 | Some v -> sprintf "%g" v
                 | None -> "-"
             host.Children.Add(mkRow "Initial (x0)" x0Txt) |> ignore
-            host.Children.Add(mkMuted "Double-click block to edit (dialog).") |> ignore
+            host.Children.Add(mkMuted "Double-click block to edit the initial value.") |> ignore
 
         | "add" ->
-            match currentMode with
-            | Simulation ->
-                host.Children.Add(mkLabel "Add") |> ignore
-                host.Children.Add(mkRow "Operation" "In1 + In2") |> ignore
-                host.Children.Add(mkMuted "Simulation block with two inputs.") |> ignore
-
-            | Constraint ->
-                let editor = getOrCreateConstraintKnownEditor b.NodeId
-                host.Children.Add(mkLabel "Add") |> ignore
-                host.Children.Add(mkRow "Operation" "A + B = Result") |> ignore
-                host.Children.Add(mkMuted "Enter known values. Leave empty = unknown.") |> ignore
-                host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
-                host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
-                host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
-                addSolvedStateToInspector host b.NodeId
+            host.Children.Add(mkLabel "Add") |> ignore
+            host.Children.Add(mkRow "Operation" "A + B = Result") |> ignore
+            host.Children.Add(mkMuted "Connect constants and monitors. Leave a monitor empty to represent an unknown value.") |> ignore
 
         | "subtract" ->
-            let editor = getOrCreateConstraintKnownEditor b.NodeId
             host.Children.Add(mkLabel "Subtract") |> ignore
             host.Children.Add(mkRow "Operation" "A - B = Result") |> ignore
-            host.Children.Add(mkMuted "Enter known values. Leave empty = unknown.") |> ignore
-            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
-            addSolvedStateToInspector host b.NodeId
+            host.Children.Add(mkMuted "Connect constants and monitors. Leave a monitor empty to represent an unknown value.") |> ignore
 
         | "multiply" ->
-            let editor = getOrCreateConstraintKnownEditor b.NodeId
             host.Children.Add(mkLabel "Multiply") |> ignore
             host.Children.Add(mkRow "Operation" "A * B = Result") |> ignore
-            host.Children.Add(mkMuted "Enter known values. Leave empty = unknown.") |> ignore
-            host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "B" (formatOptionalFloat editor.B) (fun txt -> editor.B <- tryParseOptionalFloat txt)) |> ignore
-            host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
-            addSolvedStateToInspector host b.NodeId
+            host.Children.Add(mkMuted "Connect constants and monitors. Leave a monitor empty to represent an unknown value.") |> ignore
 
         | "gain" ->
-            match currentMode with
-            | Simulation ->
-                host.Children.Add(mkLabel "Gain") |> ignore
-                let kTxt =
-                    match b.Constant with
-                    | Some v -> sprintf "%g" v
-                    | None -> "-"
-                host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
-                host.Children.Add(mkRow "Operation" "k * input") |> ignore
-                host.Children.Add(mkMuted "Double-click block to edit factor.") |> ignore
-
-            | Constraint ->
-                let editor = getOrCreateConstraintKnownEditor b.NodeId
-                host.Children.Add(mkLabel "Gain") |> ignore
-                let kTxt =
-                    match b.Constant with
-                    | Some v -> sprintf "%g" v
-                    | None -> "-"
-                host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
-                host.Children.Add(mkRow "Operation" "k * A = Result") |> ignore
-                host.Children.Add(mkMuted "Gain factor comes from the block, while terminal values are entered here.") |> ignore
-                host.Children.Add(mkInputRow "A" (formatOptionalFloat editor.A) (fun txt -> editor.A <- tryParseOptionalFloat txt)) |> ignore
-                host.Children.Add(mkInputRow "Result" (formatOptionalFloat editor.Result) (fun txt -> editor.Result <- tryParseOptionalFloat txt)) |> ignore
-                addSolvedStateToInspector host b.NodeId
+            host.Children.Add(mkLabel "Gain") |> ignore
+            let kTxt =
+                match b.Constant with
+                | Some v -> sprintf "%g" v
+                | None -> "-"
+            host.Children.Add(mkRow "Factor (k)" kTxt) |> ignore
+            host.Children.Add(mkRow "Operation" "k * A = Result") |> ignore
+            host.Children.Add(mkMuted "Use monitors to provide or inspect terminal values.") |> ignore
 
         | "constraint" ->
             host.Children.Add(mkLabel "Constraint") |> ignore
@@ -424,6 +318,11 @@ type MainWindow() as this =
             host.Children.Add(mkRow "Min" "-") |> ignore
             host.Children.Add(mkRow "Max" "-") |> ignore
             host.Children.Add(mkMuted "Min/Max parameters can be added later.") |> ignore
+
+        | "monitor" ->
+            host.Children.Add(mkLabel "Monitor") |> ignore
+            host.Children.Add(mkRow "Role" "Known / unknown terminal value") |> ignore
+            host.Children.Add(mkMuted "If the monitor input is empty, the value is unknown. If a number is entered, it acts as a known value.") |> ignore
 
         | _ ->
             host.Children.Add(mkMuted "No UI has been defined for this block yet.") |> ignore
@@ -435,23 +334,9 @@ type MainWindow() as this =
         | "subtract"
         | "multiply"
         | "gain"
-        | "constraint" -> true
+        | "constraint"
+        | "monitor" -> true
         | _ -> false
-
-    let refreshAllBlockVisualStates (canvas: Canvas) =
-        canvas.Children
-        |> Seq.iter (fun c ->
-            match c with
-            | :? BlockControl as b ->
-                match currentMode with
-                | Simulation ->
-                    applySimulationVisualState b
-                | Constraint ->
-                    if isConstraintKind (kindOf b) then
-                        applyConstraintVisualState b
-                    else
-                        applySimulationVisualState b
-            | _ -> ())
 
     let refreshConstraintVisualStates (canvas: Canvas) =
         canvas.Children
@@ -467,57 +352,6 @@ type MainWindow() as this =
     let getConstraintKnownValues (b: BlockControl) =
         let k = kindOf b
 
-        let fromEditor () =
-            match constraintKnowns.TryGetValue(b.NodeId) with
-            | false, _ -> []
-            | true, editor ->
-                match k with
-                | "gain" ->
-                    [ match editor.A with
-                      | Some v ->
-                          yield
-                              { blockId = b.NodeId
-                                terminal = "A"
-                                value = v }
-                      | None -> ()
-
-                      match editor.Result with
-                      | Some v ->
-                          yield
-                              { blockId = b.NodeId
-                                terminal = "Result"
-                                value = v }
-                      | None -> () ]
-
-                | "add"
-                | "subtract"
-                | "multiply" ->
-                    [ match editor.A with
-                      | Some v ->
-                          yield
-                              { blockId = b.NodeId
-                                terminal = "A"
-                                value = v }
-                      | None -> ()
-
-                      match editor.B with
-                      | Some v ->
-                          yield
-                              { blockId = b.NodeId
-                                terminal = "B"
-                                value = v }
-                      | None -> ()
-
-                      match editor.Result with
-                      | Some v ->
-                          yield
-                              { blockId = b.NodeId
-                                terminal = "Result"
-                                value = v }
-                      | None -> () ]
-
-                | _ -> []
-
         match k with
         | "constant" ->
             match b.Constant with
@@ -527,13 +361,16 @@ type MainWindow() as this =
                     value = v } ]
             | None -> []
 
-        | "gain"
-        | "add"
-        | "subtract"
-        | "multiply" ->
-            fromEditor ()
+        | "monitor" ->
+            match b.GetMonitorValue() with
+            | Some v ->
+                [ { blockId = b.NodeId
+                    terminal = "Value"
+                    value = v } ]
+            | None -> []
 
-        | _ -> []
+        | _ ->
+            []
 
     let tryMapConnectionToConstraintWire (e: Connection) =
         let fromKind = kindOf e.From.Block
@@ -542,15 +379,23 @@ type MainWindow() as this =
         if not (isConstraintKind fromKind) || not (isConstraintKind toKind) then
             None
         else
+            let fromTerminal =
+                match fromKind with
+                | "monitor" -> "Value"
+                | _ -> "Result"
+
             let toTerminal =
-                match e.To_.Input with
-                | Some In1 -> "A"
-                | Some In2 -> "B"
-                | None -> "A"
+                match toKind with
+                | "monitor" -> "Value"
+                | _ ->
+                    match e.To_.Input with
+                    | Some In1 -> "A"
+                    | Some In2 -> "B"
+                    | None -> "A"
 
             Some
                 { fromBlockId = e.From.Block.NodeId
-                  fromTerminal = "Result"
+                  fromTerminal = fromTerminal
                   toBlockId = e.To_.Block.NodeId
                   toTerminal = toTerminal }
 
@@ -784,6 +629,10 @@ type MainWindow() as this =
                 b.SetTitle("Gain")
                 b.Constant <- Some 1.0
                 b.IntegratorInitial <- None
+            | "monitor" ->
+                b.SetTitle("Monitor")
+                b.Constant <- None
+                b.IntegratorInitial <- None
             | _ ->
                 b.SetTitle(kind)
 
@@ -903,11 +752,30 @@ type MainWindow() as this =
 
             match currentMode with
             | Simulation ->
+                b.SetConstraintUiVisible(false)
+                b.SetMonitorUiVisible(false)
                 applySimulationVisualState b
+
             | Constraint ->
-                if isConstraintKind k then
+                match k with
+                | "monitor" ->
+                    b.SetConstraintUiVisible(false)
+                    b.SetMonitorUiVisible(true)
                     applyConstraintVisualState b
-                else
+
+                | "add"
+                | "subtract"
+                | "multiply"
+                | "gain"
+                | "constant"
+                | "constraint" ->
+                    b.SetMonitorUiVisible(false)
+                    b.SetConstraintUiVisible(false)
+                    applyConstraintVisualState b
+
+                | _ ->
+                    b.SetMonitorUiVisible(false)
+                    b.SetConstraintUiVisible(false)
                     applySimulationVisualState b
 
             canvas.Children.Add(b) |> ignore
@@ -929,7 +797,6 @@ type MainWindow() as this =
                 canvas.Children.Remove(c) |> ignore
 
             connections.Clear()
-            constraintKnowns.Clear()
             constraintSolved.Clear()
             selectedBlock <- None
             nextX <- 60.0
@@ -960,6 +827,7 @@ type MainWindow() as this =
                 | Constraint, "multiply" -> true
                 | Constraint, "gain" -> true
                 | Constraint, "constraint" -> true
+                | Constraint, "monitor" -> true
 
                 | _ -> false
 
@@ -1005,17 +873,20 @@ type MainWindow() as this =
                     block.SetTitle("Multiply")
                 | "constraint" ->
                     block.SetTitle("Constraint")
+                | "monitor" ->
+                    block.SetTitle("Monitor")
                 | _ -> ()
 
                 blockMap[b.id] <- block
 
             for kv in graph.knownValues do
-                let editor = getOrCreateConstraintKnownEditor kv.blockId
-                match kv.terminal with
-                | "A" -> editor.A <- Some kv.value
-                | "B" -> editor.B <- Some kv.value
-                | "Result" -> editor.Result <- Some kv.value
-                | _ -> ()
+                if blockMap.ContainsKey(kv.blockId) then
+                    let block = blockMap[kv.blockId]
+
+                    match kindOf block, kv.terminal with
+                    | "monitor", "Value" ->
+                        block.SetMonitorInputValue(Some kv.value)
+                    | _ -> ()
 
             Dispatcher.UIThread.Post((fun () ->
                 for w in graph.wires do
@@ -1027,6 +898,7 @@ type MainWindow() as this =
                             match w.toTerminal with
                             | "A" -> In1
                             | "B" -> In2
+                            | "Value" -> In1
                             | _ -> In1
 
                         let startP = getOutputPortPosition fromBlock canvas
@@ -1072,6 +944,7 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnIntegrator").Click.Add(fun _ -> addBlock "integrator")
         this.FindControl<Button>("BtnConstraint").Click.Add(fun _ -> addBlock "constraint")
         this.FindControl<Button>("BtnGain").Click.Add(fun _ -> addBlock "gain")
+        this.FindControl<Button>("BtnMonitor").Click.Add(fun _ -> addBlock "monitor")
 
         this.FindControl<Button>("BtnClearCanvas").Click.Add(fun _ ->
             clearCanvasGraph ()
@@ -1189,6 +1062,7 @@ type MainWindow() as this =
                         if result.ok then
                             storeConstraintResult result
                             refreshConstraintVisualStates canvas
+                            applyConstraintSolvedValuesToBlocks canvas
                             setOutput (formatConstraintResult result)
 
                             match selectedBlock with
@@ -1265,6 +1139,7 @@ type MainWindow() as this =
                             if result.ok then
                                 storeConstraintResult result
                                 refreshConstraintVisualStates canvas
+                                applyConstraintSolvedValuesToBlocks canvas
                                 setOutput (formatConstraintResult result)
 
                                 match selectedBlock with
