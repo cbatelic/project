@@ -26,3 +26,17 @@ E:\Avlonia\project\SimulinkClone.Core\obj\Debug\net10.0\refint\SimulinkClone.Cor
 E:\Avlonia\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.xml
 E:\Avlonia\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.pdb
 E:\Avlonia\project\SimulinkClone.Core\obj\Debug\net10.0\ref\SimulinkClone.Core.dll
+E:\SIMULINK\project\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.deps.json
+E:\SIMULINK\project\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.dll
+E:\SIMULINK\project\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.pdb
+E:\SIMULINK\project\SimulinkClone.Core\bin\Debug\net10.0\SimulinkClone.Core.xml
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.fsproj.AssemblyReference.cache
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.AssemblyInfoInputs.cache
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.AssemblyInfo.fs
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.fsproj.CoreCompileInputs.cache
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.sourcelink.json
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.dll
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\refint\SimulinkClone.Core.dll
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.xml
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\SimulinkClone.Core.pdb
+E:\SIMULINK\project\SimulinkClone.Core\obj\Debug\net10.0\ref\SimulinkClone.Core.dll

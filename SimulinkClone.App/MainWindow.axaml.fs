@@ -56,6 +56,13 @@ type EditorMode =
     | Simulation
     | Constraint
 
+type WorkspaceStatus =
+    | Idle
+    | Running
+    | Ok
+    | Underdetermined
+    | Error
+
 type MainWindow() as this =
     inherit Window()
 
@@ -67,6 +74,10 @@ type MainWindow() as this =
 
     let mutable dragging: BlockControl option = None
     let mutable dragOffset = Point(0, 0)
+
+    let blinkTimer = DispatcherTimer()
+    let mutable blinkOn = false
+    let mutable currentStatus = Idle
 
     let connections = ResizeArray<Connection>()
 
@@ -86,6 +97,86 @@ type MainWindow() as this =
     let clearInspector () =
         let host = this.FindControl<StackPanel>("InspectorHost")
         host.Children.Clear()
+
+    let stopBlinking () =
+        blinkTimer.Stop()
+
+        let badge = this.FindControl<Border>("StatusBadge")
+        if not (isNull badge) then
+            badge.Opacity <- 1.0
+
+    let setWorkspaceStatus (status: WorkspaceStatus) =
+        currentStatus <- status
+
+        let badge = this.FindControl<Border>("StatusBadge")
+        let dot = this.FindControl<Ellipse>("StatusDot")
+        let txt = this.FindControl<TextBlock>("TxtStatus")
+
+        stopBlinking ()
+
+        match status with
+        | Idle ->
+            if not (isNull txt) then
+                txt.Text <- "IDLE"
+                txt.Foreground <- SolidColorBrush(Color.Parse("#8FA1BF"))
+
+            if not (isNull dot) then
+                dot.Fill <- SolidColorBrush(Color.Parse("#64748B"))
+
+            if not (isNull badge) then
+                badge.Background <- SolidColorBrush(Color.Parse("#0F141B"))
+                badge.BorderBrush <- SolidColorBrush(Color.Parse("#293140"))
+                
+        | Underdetermined ->
+            if not (isNull txt) then
+                txt.Text <- "UNDERDETERMINED"
+                txt.Foreground <- SolidColorBrush(Color.Parse("#FDE68A"))
+
+            if not (isNull dot) then
+                dot.Fill <- SolidColorBrush(Color.Parse("#FACC15"))
+
+            if not (isNull badge) then
+                badge.Background <- SolidColorBrush(Color.Parse("#3A2F0B"))
+                badge.BorderBrush <- SolidColorBrush(Color.Parse("#FACC15"))
+
+        | Running ->
+            if not (isNull txt) then
+                txt.Text <- "RUNNING"
+                txt.Foreground <- SolidColorBrush(Color.Parse("#93C5FD"))
+
+            if not (isNull dot) then
+                dot.Fill <- SolidColorBrush(Color.Parse("#3B82F6"))
+
+            if not (isNull badge) then
+                badge.Background <- SolidColorBrush(Color.Parse("#0B1730"))
+                badge.BorderBrush <- SolidColorBrush(Color.Parse("#2563EB"))
+
+            blinkOn <- false
+            blinkTimer.Start()
+
+        | Ok ->
+            if not (isNull txt) then
+                txt.Text <- "OK"
+                txt.Foreground <- SolidColorBrush(Color.Parse("#86EFAC"))
+
+            if not (isNull dot) then
+                dot.Fill <- SolidColorBrush(Color.Parse("#22C55E"))
+
+            if not (isNull badge) then
+                badge.Background <- SolidColorBrush(Color.Parse("#102516"))
+                badge.BorderBrush <- SolidColorBrush(Color.Parse("#22C55E"))
+
+        | Error ->
+            if not (isNull txt) then
+                txt.Text <- "ERROR"
+                txt.Foreground <- SolidColorBrush(Color.Parse("#FCA5A5"))
+
+            if not (isNull dot) then
+                dot.Fill <- SolidColorBrush(Color.Parse("#EF4444"))
+
+            if not (isNull badge) then
+                badge.Background <- SolidColorBrush(Color.Parse("#2A1010"))
+                badge.BorderBrush <- SolidColorBrush(Color.Parse("#EF4444"))
 
     let mkLabel (text: string) =
         let t = TextBlock()
@@ -228,6 +319,18 @@ type MainWindow() as this =
             constraintSolved[block.id] <-
                 { Status = block.status
                   Values = values }
+                
+    let getConstraintRunWorkspaceStatus (result: ConstraintRunResponseDto) =
+        let statuses =
+            result.blocks
+            |> List.map (fun b -> b.status.Trim().ToLowerInvariant())
+
+        if statuses |> List.exists (fun s -> s = "error") then
+            Error
+        elif statuses |> List.exists (fun s -> s = "underdetermined") then
+            Underdetermined
+        else
+            Ok
 
     let applyConstraintSolvedValuesToBlocks (canvas: Canvas) =
         canvas.Children
@@ -235,20 +338,50 @@ type MainWindow() as this =
             match c with
             | :? BlockControl as b ->
                 b.ClearMonitorSolvedValue()
+                b.ClearSolvedTerminals()
 
-                match kindOf b with
-                | "monitor" ->
-                    match tryGetSolvedState b.NodeId with
-                    | Some solved ->
-                        let value =
-                            solved.Values
-                            |> Map.tryFind "Value"
-                            |> Option.defaultValue None
+                match tryGetSolvedState b.NodeId with
+                | Some solved ->
+                    let status = solved.Status.Trim().ToLowerInvariant()
 
-                        b.SetMonitorSolvedValue(value)
-                    | None -> ()
-                | _ -> ()
-            | _ -> ())
+                    let tryValue terminal =
+                        solved.Values
+                        |> Map.tryFind terminal
+                        |> Option.defaultValue None
+
+                    match kindOf b, status with
+                    | "monitor", "ok" ->
+                        b.SetMonitorSolvedValue(tryValue "Value")
+
+                    | "monitor", "underdetermined" ->
+                        b.SetMonitorSolvedValue(None)
+
+                    | "monitor", "error" ->
+                        ()
+
+                    | ("add" | "subtract" | "multiply" | "gain" | "constraint"), "ok" ->
+                        b.SetSolvedTerminal("A", tryValue "A")
+                        b.SetSolvedTerminal("B", tryValue "B")
+                        b.SetSolvedTerminal("Result", tryValue "Result")
+
+                    | ("add" | "subtract" | "multiply" | "gain" | "constraint"), "underdetermined" ->
+                        b.SetSolvedTerminal("A", tryValue "A")
+                        b.SetSolvedTerminal("B", tryValue "B")
+                        b.SetSolvedTerminal("Result", None)
+
+                    | ("add" | "subtract" | "multiply" | "gain" | "constraint"), "error" ->
+                        ()
+
+                    | "constant", "ok" ->
+                        b.SetSolvedTerminal("Result", tryValue "Result")
+
+                    | "constant", _ ->
+                        ()
+
+                    | _ -> ()
+                | None -> ()
+            | _ -> ()
+        )
 
     let showInspectorForBlock (canvas: Canvas) (b: BlockControl) =
         let host = this.FindControl<StackPanel>("InspectorHost")
@@ -587,6 +720,16 @@ type MainWindow() as this =
     do
         initXaml()
 
+        blinkTimer.Interval <- TimeSpan.FromMilliseconds(450.0)
+        blinkTimer.Tick.Add(fun _ ->
+            let badge = this.FindControl<Border>("StatusBadge")
+            if not (isNull badge) then
+                blinkOn <- not blinkOn
+                badge.Opacity <- if blinkOn then 0.45 else 1.0
+        )
+
+        setWorkspaceStatus Idle
+
         let canvas = this.FindControl<Canvas>("EditorCanvas")
         let client = ServiceClient(BASE_URL)
 
@@ -803,11 +946,13 @@ type MainWindow() as this =
             nextY <- 60.0
             clearInspector()
             setOutput ""
+            setWorkspaceStatus Idle
 
         let setMode mode =
             currentMode <- mode
             clearCanvasGraph ()
             setModeUi ()
+            setWorkspaceStatus Idle
 
             match currentMode with
             | Simulation -> setOutput "Mode: Simulation"
@@ -838,6 +983,7 @@ type MainWindow() as this =
                     | Constraint -> "Constraint"
 
                 setOutput (sprintf "Block '%s' is not allowed in %s mode." k modeText)
+                setWorkspaceStatus Error
             else
                 let b = createBlockAt k nextX nextY
                 nextX <- nextX + 30.0
@@ -949,23 +1095,31 @@ type MainWindow() as this =
         this.FindControl<Button>("BtnClearCanvas").Click.Add(fun _ ->
             clearCanvasGraph ()
             setOutput "Canvas cleared."
+            setWorkspaceStatus Idle
         )
 
         this.FindControl<Button>("BtnPing").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     let! res = client.GetHealthAsync()
                     setOutput res
+                    setWorkspaceStatus Ok
                 with ex ->
                     setOutput ("PING ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 
         this.FindControl<Button>("BtnRun").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     if currentMode <> Simulation then
                         setOutput "You are not currently in Simulation mode."
+                        setWorkspaceStatus Error
                     else
                         let nodes =
                             canvas.Children
@@ -1005,6 +1159,7 @@ type MainWindow() as this =
 
                         if not saved.ok then
                             setOutput "SAVE ERROR: backend returned ok=false"
+                            setWorkspaceStatus Error
                         else
                             let outputs =
                                 nodes |> List.map (fun n -> n.id)
@@ -1018,6 +1173,7 @@ type MainWindow() as this =
                             let! runRes = client.PostJsonAsync<RunSavedRequest, RunResponse>(url, req)
 
                             setOutput (sprintf "OK. SavedId=%s. Series=%d" saved.id runRes.series.Length)
+                            setWorkspaceStatus Ok
 
                             let owner =
                                 match TopLevel.GetTopLevel(this) with
@@ -1028,14 +1184,18 @@ type MainWindow() as this =
 
                 with ex ->
                     setOutput ("RUN ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 
         this.FindControl<Button>("BtnSaveConstraint").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     if currentMode <> Constraint then
                         setOutput "You are not currently in Constraint mode."
+                        setWorkspaceStatus Error
                     else
                         let graph = buildConstraintGraphDto canvas
                         let! saved = client.SaveConstraintAsync(graph)
@@ -1043,18 +1203,24 @@ type MainWindow() as this =
                         if saved.ok then
                             setOutput (sprintf "Constraint graph saved. Id=%s" saved.id)
                             this.FindControl<TextBox>("TxtConstraintGraphId").Text <- saved.id
+                            setWorkspaceStatus Ok
                         else
                             setOutput "SAVE CONSTRAINT ERROR: backend returned ok=false"
+                            setWorkspaceStatus Error
                 with ex ->
                     setOutput ("SAVE CONSTRAINT ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 
         this.FindControl<Button>("BtnConstraintRun").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     if currentMode <> Constraint then
                         setOutput "You are not currently in Constraint mode."
+                        setWorkspaceStatus Error
                     else
                         let graph = buildConstraintGraphDto canvas
                         let! result = client.RunConstraintAsync(graph)
@@ -1065,22 +1231,30 @@ type MainWindow() as this =
                             applyConstraintSolvedValuesToBlocks canvas
                             setOutput (formatConstraintResult result)
 
+                            let runStatus = getConstraintRunWorkspaceStatus result
+                            setWorkspaceStatus runStatus
+
                             match selectedBlock with
                             | Some b -> showInspectorForBlock canvas b
                             | None -> ()
                         else
                             setOutput "Constraint run returned ok=false."
+                            setWorkspaceStatus Error
 
                 with ex ->
                     setOutput ("CONSTRAINT RUN ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 
         this.FindControl<Button>("BtnListConstraints").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     if currentMode <> Constraint then
                         setOutput "You are not currently in Constraint mode."
+                        setWorkspaceStatus Error
                     else
                         let! res = client.ListConstraintAsync()
 
@@ -1093,46 +1267,60 @@ type MainWindow() as this =
                                 |> String.concat Environment.NewLine
 
                             setOutput (if String.IsNullOrWhiteSpace(text) then "No saved constraint graphs." else text)
+                            setWorkspaceStatus Ok
                         else
                             setOutput "LIST CONSTRAINTS ERROR: backend returned ok=false"
+                            setWorkspaceStatus Error
                 with ex ->
                     setOutput ("LIST CONSTRAINTS ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 
         this.FindControl<Button>("BtnLoadConstraint").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     if currentMode <> Constraint then
                         setOutput "You are not currently in Constraint mode."
+                        setWorkspaceStatus Error
                     else
                         let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
 
                         if String.IsNullOrWhiteSpace(idText) then
                             setOutput "Enter a constraint graph ID."
+                            setWorkspaceStatus Error
                         else
                             let! res = client.GetConstraintAsync(idText)
 
                             if res.ok then
                                 loadConstraintGraphToCanvas res.graph.graph
                                 setOutput (sprintf "Constraint graph loaded: %s" res.graph.meta.id)
+                                setWorkspaceStatus Ok
                             else
                                 setOutput "LOAD CONSTRAINT ERROR: backend returned ok=false"
+                                setWorkspaceStatus Error
                 with ex ->
                     setOutput ("LOAD CONSTRAINT ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 
         this.FindControl<Button>("BtnRunSavedConstraint").Click.Add(fun _ ->
+            setWorkspaceStatus Running
+
             task {
                 try
                     if currentMode <> Constraint then
                         setOutput "You are not currently in Constraint mode."
+                        setWorkspaceStatus Error
                     else
                         let idText = this.FindControl<TextBox>("TxtConstraintGraphId").Text
 
                         if String.IsNullOrWhiteSpace(idText) then
                             setOutput "Enter a constraint graph ID."
+                            setWorkspaceStatus Error
                         else
                             let! result = client.RunSavedConstraintAsync(idText)
 
@@ -1141,14 +1329,18 @@ type MainWindow() as this =
                                 refreshConstraintVisualStates canvas
                                 applyConstraintSolvedValuesToBlocks canvas
                                 setOutput (formatConstraintResult result)
+                                let runStatus = getConstraintRunWorkspaceStatus result
+                                setWorkspaceStatus runStatus
 
                                 match selectedBlock with
                                 | Some b -> showInspectorForBlock canvas b
                                 | None -> ()
                             else
                                 setOutput "RUN SAVED CONSTRAINT ERROR: backend returned ok=false"
+                                setWorkspaceStatus Error
                 with ex ->
                     setOutput ("RUN SAVED CONSTRAINT ERROR: " + ex.Message)
+                    setWorkspaceStatus Error
             } |> ignore
         )
 

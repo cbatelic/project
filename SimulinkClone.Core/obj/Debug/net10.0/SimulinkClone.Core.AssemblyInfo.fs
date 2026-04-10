@@ -10,7 +10,7 @@ open System.Reflection
 [<assembly: System.Reflection.AssemblyCompanyAttribute("SimulinkClone.Core")>]
 [<assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")>]
 [<assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")>]
-[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+068572b157f69a2bca971ab12f83e4b360ba7572")>]
+[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7a587bb1f65c098e50d5ab3c0624f3c186c18d5")>]
 [<assembly: System.Reflection.AssemblyProductAttribute("SimulinkClone.Core")>]
 [<assembly: System.Reflection.AssemblyTitleAttribute("SimulinkClone.Core")>]
 [<assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")>]

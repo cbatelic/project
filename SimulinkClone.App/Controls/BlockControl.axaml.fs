@@ -36,6 +36,10 @@ type BlockControl() as this =
         let c = this.FindControl<TextBox>(name)
         if isNull c then None else Some c
 
+    let tryFindStackPanel (name: string) =
+        let c = this.FindControl<StackPanel>(name)
+        if isNull c then None else Some c
+
     let setTextIfExists (name: string) (value: string) =
         match tryFindTextBlock name with
         | Some tb -> tb.Text <- value
@@ -59,7 +63,7 @@ type BlockControl() as this =
             b.BorderThickness <- Thickness(1.4)
             b.BorderBrush <- SolidColorBrush(Color.Parse("#91A4C3"))
             b.Background <- SolidColorBrush(Color.Parse("#1B2230"))
- 
+
     let hookHandledClick (c: Control) (fire: unit -> unit) =
         c.PointerPressed.Add(fun e ->
             e.Handled <- true
@@ -90,14 +94,16 @@ type BlockControl() as this =
 
     let normalizeKind (k: string) =
         (if isNull k then "" else k).Trim().ToLowerInvariant()
+
     let updateSizeForKind () =
         match normalizeKind kind with
         | "monitor" ->
             this.Width <- 210.0
-            this.Height <- 132.0
+            this.Height <- 190.0
         | _ ->
             this.Width <- 210.0
-            this.Height <- 132.0
+            this.Height <- 190.0
+
     let iconForKind (k: string) =
         match normalizeKind k with
         | "constant" -> "C"
@@ -152,14 +158,15 @@ type BlockControl() as this =
             | "constraint" -> "Constraint node"
             | "monitor" -> "Value"
             | _ -> ""
+
         updateSizeForKind ()
         setTextIfExists "ParamText" paramText
         setTextIfExists "SimpleParamText" paramText
-        
+
     let tryFindPath (name: string) =
         let c = this.FindControl<Avalonia.Controls.Shapes.Path>(name)
         if isNull c then None else Some c
-        
+
     let setMonitorIconVisible (isVisible: bool) =
         match tryFindPath "MonitorIcon" with
         | Some p -> p.IsVisible <- isVisible
@@ -172,6 +179,7 @@ type BlockControl() as this =
     let openParamDialog () =
         let k = normalizeKind kind
         setMonitorIconVisible (k = "monitor")
+
         if k <> "constant" && k <> "integrator" && k <> "gain" then
             ()
         else
@@ -327,6 +335,10 @@ type BlockControl() as this =
         setBorderVisible "ConstraintPanel" isVisible
         setBorderVisible "SimpleParamPanel" (not isVisible)
 
+        match tryFindStackPanel "SolvedTerminalsPanel" with
+        | Some panel -> panel.IsVisible <- false
+        | None -> ()
+
     member _.SetMonitorUiVisible(isVisible: bool) =
         setBorderVisible "MonitorPanel" isVisible
         setBorderVisible "SimpleParamPanel" (not isVisible)
@@ -350,16 +362,86 @@ type BlockControl() as this =
         setTextBoxTextIfExists "MonitorInput" text
 
     member this.SetMonitorSolvedValue(value: float option) =
-        let text =
+        let overlayText =
             match value with
-            | Some v ->
-                if this.HasMonitorInput() then "" else sprintf "%g" v
-            | None -> ""
+            | Some v when not (this.HasMonitorInput()) -> fmt v
+            | None when not (this.HasMonitorInput()) -> "?"
+            | _ -> ""
 
-        setTextIfExists "MonitorSolvedText" text
+        let solvedText =
+            match value with
+            | Some v when not (this.HasMonitorInput()) -> sprintf "Solved = %s" (fmt v)
+            | None when not (this.HasMonitorInput()) -> "Solved = ?"
+            | _ -> ""
+
+        match tryFindTextBlock "MonitorSolvedOverlay" with
+        | Some tb ->
+            tb.Text <- overlayText
+            tb.IsVisible <- not (String.IsNullOrWhiteSpace overlayText)
+        | None -> ()
+
+        match tryFindTextBlock "MonitorSolvedText" with
+        | Some tb ->
+            tb.Text <- solvedText
+            tb.IsVisible <- not (String.IsNullOrWhiteSpace solvedText)
+        | None -> ()
 
     member _.ClearMonitorSolvedValue() =
-        setTextIfExists "MonitorSolvedText" ""
+        match tryFindTextBlock "MonitorSolvedOverlay" with
+        | Some tb ->
+            tb.Text <- ""
+            tb.IsVisible <- false
+        | None -> ()
+
+        match tryFindTextBlock "MonitorSolvedText" with
+        | Some tb ->
+            tb.Text <- ""
+            tb.IsVisible <- false
+        | None -> ()
+
+    member _.ClearSolvedTerminals() =
+        setTextIfExists "SolvedA" ""
+        setTextIfExists "SolvedB" ""
+        setTextIfExists "SolvedResult" ""
+
+        match tryFindStackPanel "SolvedTerminalsPanel" with
+        | Some panel -> panel.IsVisible <- false
+        | None -> ()
+
+        match tryFindTextBlock "SolvedA" with
+        | Some tb -> tb.IsVisible <- false
+        | None -> ()
+
+        match tryFindTextBlock "SolvedB" with
+        | Some tb -> tb.IsVisible <- false
+        | None -> ()
+
+        match tryFindTextBlock "SolvedResult" with
+        | Some tb -> tb.IsVisible <- false
+        | None -> ()
+
+    member _.SetSolvedTerminal(name: string, value: float option) =
+        let showText blockName text =
+            match tryFindTextBlock blockName with
+            | Some tb ->
+                tb.Text <- text
+                tb.IsVisible <- true
+
+                match tryFindStackPanel "SolvedTerminalsPanel" with
+                | Some panel -> panel.IsVisible <- true
+                | None -> ()
+            | None -> ()
+
+        let text =
+            match value with
+            | Some v -> sprintf "%s = %s" name (fmt v)
+            | None -> sprintf "%s = ?" name
+
+        match name.Trim().ToLowerInvariant() with
+        | "a" -> showText "SolvedA" text
+        | "b" -> showText "SolvedB" text
+        | "result" -> showText "SolvedResult" text
+        | _ -> ()
 
     member _.NodeId
         with get () = nodeId
