@@ -24,7 +24,7 @@ type Node =
 type Edge =
     { fromId: NodeId
       toId: NodeId
-      toPort: int } // 1 ili 2
+      toPort: int } 
 
 type Graph =
     { nodes: Node list

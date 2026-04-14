@@ -104,17 +104,29 @@ type BlockControl() as this =
             this.Width <- 210.0
             this.Height <- 190.0
 
+    let tryFindPath (name: string) =
+        let c = this.FindControl<Avalonia.Controls.Shapes.Path>(name)
+        if isNull c then None else Some c
+
+    let setVariableIconVisible (isVisible: bool) =
+        match tryFindPath "MonitorIcon" with
+        | Some p -> p.IsVisible <- isVisible
+        | None -> ()
+
+        match tryFindTextBlock "TitleIcon" with
+        | Some tb -> tb.IsVisible <- not isVisible
+        | None -> ()
+
     let iconForKind (k: string) =
         match normalizeKind k with
-        | "constant" -> "C"
-        | "add" -> "∑"
-        | "subtract" -> "−"
-        | "multiply" -> "×"
-        | "integrator" -> "∫"
-        | "gain" -> "k"
-        | "constraint" -> "⎇"
-        | "monitor" -> "M"
-        | _ -> "■"
+        | "constant"   -> "━"   
+        | "add"        -> "⊕"   
+        | "subtract"   -> "⊖"   
+        | "multiply"   -> "⊗"
+        | "integrator" -> "∫"  
+        | "gain"       -> "▷"   
+        | "constraint" -> "≡"  
+        | _ -> "□"
 
     let titleForKind (k: string) =
         match normalizeKind k with
@@ -125,7 +137,7 @@ type BlockControl() as this =
         | "integrator" -> "Integrator"
         | "gain" -> "Gain"
         | "constraint" -> "Constraint"
-        | "monitor" -> "Monitor"
+        | "monitor" -> "Variable"
         | other when other.Length > 0 -> other
         | _ -> "Block"
 
@@ -134,6 +146,7 @@ type BlockControl() as this =
 
         setTextIfExists "TitleIcon" (iconForKind k)
         setTextIfExists "TitleText" (titleForKind k)
+        setVariableIconVisible (k = "monitor")
 
         let paramText =
             match k with
@@ -156,29 +169,16 @@ type BlockControl() as this =
             | "subtract" -> "A - B = R"
             | "multiply" -> "A × B = R"
             | "constraint" -> "Constraint node"
-            | "monitor" -> "Value"
+            | "monitor" -> "x = ?"
             | _ -> ""
 
         updateSizeForKind ()
         setTextIfExists "ParamText" paramText
         setTextIfExists "SimpleParamText" paramText
 
-    let tryFindPath (name: string) =
-        let c = this.FindControl<Avalonia.Controls.Shapes.Path>(name)
-        if isNull c then None else Some c
-
-    let setMonitorIconVisible (isVisible: bool) =
-        match tryFindPath "MonitorIcon" with
-        | Some p -> p.IsVisible <- isVisible
-        | None -> ()
-
-        match tryFindTextBlock "TitleIcon" with
-        | Some tb -> tb.IsVisible <- not isVisible
-        | None -> ()
-
     let openParamDialog () =
         let k = normalizeKind kind
-        setMonitorIconVisible (k = "monitor")
+        setVariableIconVisible (k = "monitor")
 
         if k <> "constant" && k <> "integrator" && k <> "gain" then
             ()

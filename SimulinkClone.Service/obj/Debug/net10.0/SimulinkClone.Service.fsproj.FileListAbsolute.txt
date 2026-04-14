@@ -260,3 +260,5 @@ E:\SIMULINK\project\SimulinkClone.Service\obj\Debug\net10.0\SimulinkClone.Servic
 E:\SIMULINK\project\SimulinkClone.Service\obj\Debug\net10.0\ref\SimulinkClone.Service.dll
 E:\SIMULINK\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\363ffe00b4e04b2082bcbdd246f8aa12.json
 E:\SIMULINK\project\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\3a2eb2247618448596f68cac77cd1673.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\363ffe00b4e04b2082bcbdd246f8aa12.json
+C:\Users\Koristnik\SimulinkClone\SimulinkClone.Service\bin\Debug\net10.0\Data\graphs\3a2eb2247618448596f68cac77cd1673.json

@@ -6,21 +6,21 @@
 
   <UserControl.Styles>
     <Style Selector="TextBlock">
-      <Setter Property="FontFamily" Value="Segoe UI, Inter, Arial"/>
+      <Setter Property="FontFamily" Value="Segoe UI, Inter, -apple-system, sans-serif"/>
     </Style>
 
     <Style Selector="TextBox">
-      <Setter Property="Background" Value="#0F141B"/>
-      <Setter Property="Foreground" Value="#EAF2FF"/>
-      <Setter Property="BorderBrush" Value="#2A3444"/>
+      <Setter Property="Background" Value="#080D14"/>
+      <Setter Property="Foreground" Value="#C8DCF0"/>
+      <Setter Property="BorderBrush" Value="#1A2A3C"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="6,4"/>
-      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="CornerRadius" Value="7"/>
+      <Setter Property="Padding" Value="7,5"/>
+      <Setter Property="FontSize" Value="11.5"/>
     </Style>
   </UserControl.Styles>
 
-  <Grid ColumnDefinitions="22,*,22"
+  <Grid ColumnDefinitions="20,*,20"
         RowDefinitions="*"
         Background="Transparent">
 
@@ -32,186 +32,251 @@
           Background="Transparent">
 
       <Border Grid.Row="0"
-              Width="22"
-              Height="22"
+              Width="20"
+              Height="20"
               Background="Transparent"
-              Margin="0,8,0,8">
+              Margin="0,6,0,6">
         <Border Name="InputPort1"
-                Width="12"
-                Height="12"
-                CornerRadius="6"
-                Background="#1B2230"
-                BorderBrush="#91A4C3"
-                BorderThickness="1.4"
+                Width="10"
+                Height="10"
+                CornerRadius="5"
+                Background="#0C1520"
+                BorderBrush="#3A6090"
+                BorderThickness="1.5"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"/>
       </Border>
 
       <Border Grid.Row="1"
-              Width="22"
-              Height="22"
+              Width="20"
+              Height="20"
               Background="Transparent"
-              Margin="0,8,0,8">
+              Margin="0,6,0,6">
         <Border Name="InputPort2"
-                Width="12"
-                Height="12"
-                CornerRadius="6"
-                Background="#1B2230"
-                BorderBrush="#91A4C3"
-                BorderThickness="1.4"
+                Width="10"
+                Height="10"
+                CornerRadius="5"
+                Background="#0C1520"
+                BorderBrush="#3A6090"
+                BorderThickness="1.5"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"/>
       </Border>
-
     </Grid>
 
     <!-- BODY -->
     <Border Name="Body"
             Grid.Column="1"
-            CornerRadius="14"
-            Background="#1A1F2A"
-            BorderBrush="#3A465A"
+            CornerRadius="13"
+            Background="#10192A"
+            BorderBrush="#1E3050"
             BorderThickness="1.2"
             Padding="0">
 
       <Grid RowDefinitions="3,Auto,Auto,Auto">
 
-        <!-- accent -->
+        <!-- Accent bar -->
         <Border Name="AccentBar"
                 Grid.Row="0"
-                Background="#3B82F6"
-                CornerRadius="14,14,0,0"/>
+                Background="#2563EB"
+                CornerRadius="13,13,0,0"/>
 
-        <!-- header -->
+        <!-- Header row -->
         <Grid Grid.Row="1"
-              Margin="12,10,12,6"
+              Margin="11,9,11,5"
               ColumnDefinitions="Auto,*">
 
-            <Border Width="26"
-                    Height="26"
-                    CornerRadius="8"
-                    Background="#111827"
-                    BorderBrush="#334155"
-                    BorderThickness="1"
-                    VerticalAlignment="Top"
-                    HorizontalAlignment="Left">
+          <!-- Icon badge -->
+          <Border Width="26"
+                  Height="26"
+                  CornerRadius="7"
+                  Background="#0A1020"
+                  BorderBrush="#1E2E46"
+                  BorderThickness="1"
+                  VerticalAlignment="Top"
+                  HorizontalAlignment="Left">
+            <Grid>
+              <TextBlock Name="TitleIcon"
+                         Text="□"
+                         Foreground="#7AAEE8"
+                         FontSize="13"
+                         FontWeight="Normal"
+                         FontFamily="Segoe UI Symbol, Segoe UI, Apple Symbols, sans-serif"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         TextAlignment="Center"
+                         IsVisible="True"/>
 
-                <Grid>
-                    <TextBlock Name="TitleIcon"
-                               Text="■"
-                               Foreground="#EAF2FF"
-                               FontSize="13"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               TextAlignment="Center"
-                               IsVisible="True"/>
+              <Path Name="MonitorIcon"
+                    Width="14"
+                    Height="10"
+                    Stretch="Uniform"
+                    Stroke="#1FD860"
+                    StrokeThickness="1.6"
+                    Fill="Transparent"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsVisible="False"
+                    Data="M 0,5 C 2,5 2,1 4,1 C 6,1 6,9 8,9 C 10,9 10,5 12,5"/>
+            </Grid>
+          </Border>
 
-                    <Path Name="MonitorIcon"
-                          Width="14"
-                          Height="14"
-                          Stretch="Uniform"
-                          Fill="#EAF2FF"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                          IsVisible="False"
-                          Data="M2,3 L14,3 L14,9 L2,9 Z M6,11 L10,11 L9,13 L7,13 Z"/>
-                </Grid>
-            </Border>
+          <!-- Title + param label -->
           <StackPanel Grid.Column="1"
-                      Margin="10,0,0,0"
+                      Margin="9,0,0,0"
                       Spacing="2">
             <TextBlock Name="TitleText"
                        Text="Block"
-                       Foreground="White"
-                       FontSize="15"
+                       Foreground="#D0E4FF"
+                       FontSize="14"
                        FontWeight="SemiBold"
                        TextTrimming="CharacterEllipsis"/>
 
             <TextBlock Name="ParamText"
                        Text=""
-                       Foreground="#7F8CA3"
+                       Foreground="#4A6A90"
                        FontSize="11"/>
           </StackPanel>
         </Grid>
 
-        <!-- simple param/info box -->
+        <!-- Simple param panel -->
         <Border Name="SimpleParamPanel"
                 Grid.Row="2"
-                Margin="12,0,12,10"
+                Margin="11,0,11,9"
                 Padding="8,6"
-                CornerRadius="10"
-                Background="#11161F"
-                BorderBrush="#2A3444"
+                CornerRadius="8"
+                Background="#08111C"
+                BorderBrush="#162030"
                 BorderThickness="1"
                 IsVisible="True">
           <TextBlock Name="SimpleParamText"
                      Text=""
-                     Foreground="#D3DAE6"
-                     FontSize="12"
+                     Foreground="#8AA8C8"
+                     FontSize="11.5"
                      TextWrapping="Wrap"/>
         </Border>
-        
+
+        <!-- Solved terminals panel -->
         <StackPanel Name="SolvedTerminalsPanel"
                     Grid.Row="3"
-                    Margin="12,0,12,12"
-                    Spacing="4"
+                    Margin="11,0,11,9"
+                    Spacing="3"
                     IsVisible="False">
-            <TextBlock Name="SolvedA"
-                       Text=""
-                       Foreground="#7DD3FC"
-                       FontSize="11"
-                       IsVisible="False"/>
-            <TextBlock Name="SolvedB"
-                       Text=""
-                       Foreground="#7DD3FC"
-                       FontSize="11"
-                       IsVisible="False"/>
-            <TextBlock Name="SolvedResult"
-                       Text=""
-                       Foreground="#F9A8D4"
-                       FontSize="11"
-                       IsVisible="False"/>
+          <TextBlock Name="SolvedA"
+                     Text=""
+                     Foreground="#60A0D8"
+                     FontSize="10.5"
+                     IsVisible="False"/>
+          <TextBlock Name="SolvedB"
+                     Text=""
+                     Foreground="#60A0D8"
+                     FontSize="10.5"
+                     IsVisible="False"/>
+          <TextBlock Name="SolvedResult"
+                     Text=""
+                     Foreground="#D890B8"
+                     FontSize="10.5"
+                     IsVisible="False"/>
         </StackPanel>
 
-        <!-- monitor panel -->
+        <!-- Monitor panel — instrument display (scope/readout style) -->
         <Border Name="MonitorPanel"
                 Grid.Row="3"
-                Margin="12,0,12,12"
-                Padding="8"
-                CornerRadius="10"
-                Background="#11161F"
-                BorderBrush="#2A3444"
+                Margin="11,0,11,9"
+                Padding="0"
+                CornerRadius="8"
+                Background="#030906"
+                BorderBrush="#0A2016"
                 BorderThickness="1"
                 IsVisible="False">
-          <StackPanel Spacing="6">
-            <TextBlock Text="Value"
-                       Foreground="#D3DAE6"
-                       FontSize="11"/>
+          <StackPanel>
 
-            <Grid>
-                <TextBox Name="MonitorInput"
-                         Watermark="leave empty = unknown"/>
+            <!-- CRT screen area -->
+            <Border Background="#020704"
+                    CornerRadius="7,7,0,0"
+                    BorderBrush="#0A2016"
+                    BorderThickness="0,0,0,1"
+                    Height="62"
+                    Padding="10,8">
+              <Grid>
 
+                <!-- Dim unknown "?" — always present as background -->
+                <TextBlock Text="?"
+                           Foreground="#082010"
+                           FontSize="26"
+                           FontWeight="Bold"
+                           FontFamily="Cascadia Code, Consolas, monospace"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           TextAlignment="Center"/>
+
+                <!-- Flatline — visible when no solved value -->
+                <Rectangle Height="1"
+                           Fill="#0D3020"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Stretch"
+                           Margin="16,0"/>
+
+                <!-- Solved value — shown after run -->
                 <TextBlock Name="MonitorSolvedOverlay"
                            Text=""
-                           Foreground="#9DD6A2"
-                           FontSize="12"
-                           Margin="10,8,10,8"
+                           Foreground="#1FD860"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           FontFamily="Cascadia Code, Consolas, monospace"
+                           HorizontalAlignment="Center"
                            VerticalAlignment="Center"
+                           TextAlignment="Center"
                            IsHitTestVisible="False"
                            IsVisible="False"/>
-            </Grid>
 
-            <TextBlock Name="MonitorSolvedText"
-                       Text=""
-                       Foreground="#9DD6A2"
-                       FontSize="11"
-                       TextWrapping="Wrap"
-                       IsVisible="False"/>
+                <!-- Corner crosshair brackets -->
+                <Path Data="M 0,7 L 0,0 L 7,0"
+                      Stroke="#174030"
+                      StrokeThickness="1.5"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Top"/>
+                <Path Data="M 7,7 L 7,0 L 0,0"
+                      Stroke="#174030"
+                      StrokeThickness="1.5"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Top"/>
+                <Path Data="M 0,0 L 0,7 L 7,7"
+                      Stroke="#174030"
+                      StrokeThickness="1.5"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Bottom"/>
+                <Path Data="M 7,0 L 7,7 L 0,7"
+                      Stroke="#174030"
+                      StrokeThickness="1.5"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Bottom"/>
+
+              </Grid>
+            </Border>
+
+            <!-- Bottom strip: constrain input + result -->
+            <StackPanel Margin="8,5,8,7" Spacing="3">
+              <TextBlock Text="Constrain"
+                         Foreground="#164028"
+                         FontSize="9.5"/>
+              <TextBox Name="MonitorInput"
+                       Watermark="leave empty = unknown"
+                       Background="#040C08"
+                       BorderBrush="#0C2818"
+                       Foreground="#1FD860"/>
+              <TextBlock Name="MonitorSolvedText"
+                         Text=""
+                         Foreground="#1FD860"
+                         FontSize="10"
+                         TextWrapping="Wrap"
+                         IsVisible="False"/>
+            </StackPanel>
+
           </StackPanel>
         </Border>
 
-        <!-- kept hidden only so fs won't fail if called -->
+        <!-- Constraint panel placeholder -->
         <Border Name="ConstraintPanel"
                 Grid.Row="3"
                 IsVisible="False"
@@ -222,20 +287,20 @@
       </Grid>
     </Border>
 
-    <!-- RIGHT PORT -->
+    <!-- RIGHT OUTPUT PORT -->
     <Border Grid.Column="2"
-            Width="22"
-            Height="22"
+            Width="20"
+            Height="20"
             Background="Transparent"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
       <Border Name="OutputPort"
-              Width="12"
-              Height="12"
-              CornerRadius="6"
-              Background="#1B2230"
-              BorderBrush="#91A4C3"
-              BorderThickness="1.4"
+              Width="10"
+              Height="10"
+              CornerRadius="5"
+              Background="#1A2A40"
+              BorderBrush="#5090D0"
+              BorderThickness="1.5"
               VerticalAlignment="Center"
               HorizontalAlignment="Center"/>
     </Border>

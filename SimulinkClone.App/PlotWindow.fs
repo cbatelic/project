@@ -106,7 +106,6 @@ module PlotWindow =
 
                 let axisBrush = SolidColorBrush(Color.Parse("#3a3a3a"))
 
-                // axes
                 let xAxis = Line(Stroke = axisBrush, StrokeThickness = 1.0)
                 xAxis.StartPoint <- Point(padL, padT + innerH)
                 xAxis.EndPoint <- Point(padL + innerW, padT + innerH)
@@ -118,7 +117,6 @@ module PlotWindow =
                 canvas.Children.Add(xAxis) |> ignore
                 canvas.Children.Add(yAxis) |> ignore
 
-                // all samples for bounds
                 let allSamples = series |> List.collect (fun s -> s.samples)
                 let ts = allSamples |> List.map (fun p -> p.t)
                 let vs = allSamples |> List.map (fun p -> p.value)
@@ -134,7 +132,6 @@ module PlotWindow =
                     let u = (v - vMin) / (vMax - vMin) |> clamp01
                     padT + (1.0 - u) * innerH
 
-                // grid lines
                 for i in 1 .. 4 do
                     let y = padT + (float i / 5.0) * innerH
                     let grid = Line(Stroke = SolidColorBrush(Color.Parse("#1f1f1f")), StrokeThickness = 1.0)
@@ -142,7 +139,6 @@ module PlotWindow =
                     grid.EndPoint <- Point(padL + innerW, y)
                     canvas.Children.Add(grid) |> ignore
 
-                // draw all series
                 series
                 |> List.iteri (fun i s ->
                     let poly = Polyline()
@@ -155,7 +151,6 @@ module PlotWindow =
 
                     canvas.Children.Add(poly) |> ignore
 
-                    // legend
                     let legend = TextBlock()
                     legend.Text <- 
                         if s.id.Contains("integrator") then "Integrator"

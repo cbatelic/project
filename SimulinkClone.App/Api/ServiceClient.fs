@@ -89,7 +89,6 @@ type ServiceClient(baseUrl: string) =
         }
         |> Async.StartAsTask
 
-    /// Use this when API returns JSON body and you want it deserialized into 'Res
     member _.PostJsonAsync<'Req, 'Res>(url: string, req: 'Req) : Task<'Res> =
         async {
             let json = JsonSerializer.Serialize(req, jsonOptions)
@@ -101,12 +100,10 @@ type ServiceClient(baseUrl: string) =
             if not resp.IsSuccessStatusCode then
                 return raise (Exception(sprintf "HTTP %d: %s" (int resp.StatusCode) body))
 
-            // Deserialize result
             return JsonSerializer.Deserialize<'Res>(body, jsonOptions)
         }
         |> Async.StartAsTask
 
-    /// Use this when API returns NO JSON body (or you don't care about it)
     member _.PostJsonUnitAsync<'Req>(url: string, req: 'Req) : Task<unit> =
         async {
             let json = JsonSerializer.Serialize(req, jsonOptions)

@@ -3,11 +3,6 @@
 open SimulinkClone.Core.Simulation.ConstraintSolver
 
 module ConstraintGraphAdapter =
-
-    // OVO SU PRIVREMENI DTO TIPOVI
-    // Ako tvoj Graph.fs već ima slične tipove, ove obriši
-    // i zamijeni ih stvarnim tipovima iz Graph.fs
-
     type GraphBlockType =
         | Subtraction
         | Multiplication

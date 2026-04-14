@@ -10,7 +10,6 @@ open Microsoft.Extensions.Hosting
 
 open SimulinkClone.Core.Simulation
 
-// DTOs
 
 type RampRequest = { dt: float; steps: int }
 type SampleDto = { t: float; value: float }
@@ -113,7 +112,7 @@ module Program =
             WriteIndented = true
         )
 
-    // Storage path (repo folder)
+    // Storage path
     let private graphsDir =
         Path.Combine(Directory.GetCurrentDirectory(), "Data", "graphs")
 
@@ -530,7 +529,6 @@ module Program =
                     fail <- Some (evalErrorToHttp e)
 
                 | EvalResult.Ok values ->
-                    // record outputs
                     for id in distinctOutputs do
                         let v =
                             match tryGetValue values id with
@@ -538,7 +536,6 @@ module Program =
                             | None -> nan
                         buffers[id].Add({ t = t; value = v })
 
-                    // update integrators for next step
                     match updateIntegratorStates values with
                     | EvalResult.Error e -> fail <- Some (evalErrorToHttp e)
                     | EvalResult.Ok () -> ()

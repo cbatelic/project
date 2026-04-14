@@ -26,14 +26,12 @@ module GraphEngine =
         | In1 -> 1
         | In2 -> 2
 
-    /// helper: find source for a given toId+port
     let private tryGetInput (g: Graph) (toId: NodeId) (p: InputPort) =
         let pInt = portInt p
         g.edges
         |> List.tryFind (fun e -> e.toId = toId && e.toPort = pInt)
         |> Option.map (fun e -> e.fromId)
 
-    /// topo order (assumes Graph.validate already ok, i.e. DAG + ports ok)
     let private topoOrder (g: Graph) : NodeId list =
         let incoming =
             g.nodes
@@ -72,8 +70,6 @@ module GraphEngine =
 
         List.rev order
 
-    /// evaluira graf u jednoj točki (bez vremena) -> output vrijednosti po nodeId
-    /// (Integrator nije podržan ovdje)
     let evalOnce (g: Graph) : EvalResult<Map<NodeId, float>> =
         let v = Graph.validate g
         if not v.ok then
@@ -120,14 +116,7 @@ module GraphEngine =
             | :? NotSupportedException as ex ->
                 Error(GraphInvalid [ ex.Message ])
 
-    /// Simulacija grafa kroz vrijeme (Constant/Add/Integrator)
-    /// Integrator:
-    ///  - input: In1
-    ///  - state init: node.constant (ako None -> 0.0)
-    ///  - y = x (prije update-a)
-    ///  - xNext = x + dt*u
-    ///
-    /// outputs: lista nodeId koje želiš kao series
+
     let runGraph (dt: Dt) (steps: int) (outputs: NodeId list) (g: Graph)
         : EvalResult<Map<NodeId, Sample<float> list>> =
 
@@ -137,7 +126,6 @@ module GraphEngine =
         else
             let outputs = outputs |> List.distinct
 
-            // outputs must exist
             let nodeIds = g.nodes |> List.map (fun n -> n.id) |> Set.ofList
             match outputs |> List.tryFind (fun id -> not (nodeIds.Contains id)) with
             | Some bad -> Error(UnknownOutputNode bad)
@@ -146,7 +134,6 @@ module GraphEngine =
                 let nodeById = g.nodes |> List.map (fun n -> n.id, n) |> Map.ofList
                 let order = topoOrder g
 
-                // state for integrators: NodeId -> x
                 let mutable state : Map<NodeId, float> =
                     g.nodes
                     |> List.choose (fun n ->
@@ -155,13 +142,11 @@ module GraphEngine =
                         else None)
                     |> Map.ofList
 
-                // series buffers
                 let series =
                     outputs
                     |> List.map (fun id -> id, ResizeArray<Sample<float>>())
                     |> Map.ofList
 
-                // one step eval
                 let evalStep (t: Time) =
                     let mutable values : Map<NodeId, float> = Map.empty
                     let mutable nextState = state
@@ -189,7 +174,6 @@ module GraphEngine =
                                 raise (ArgumentException($"Missing input In2 for node {id}"))
 
                         | Integrator ->
-                            // u from In1
                             let uSrc = tryGetInput g id In1
                             match uSrc with
                             | None ->
@@ -202,10 +186,8 @@ module GraphEngine =
                                 values <- values.Add(id, y)
                                 nextState <- nextState.Add(id, xNext)
 
-                    // commit state for next step
                     state <- nextState
 
-                    // emit outputs
                     for outId in outputs do
                         let y = values[outId]
                         series[outId].Add({ t = t; value = y })

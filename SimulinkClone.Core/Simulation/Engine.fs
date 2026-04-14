@@ -8,9 +8,6 @@ module Blocks =
     let add : StatelessBlock<float*float, float> =
         fun (a,b) -> a + b
 
-    /// Diskretni integrator (Euler):
-    /// x_{k+1} = x_k + dt * u_k
-    /// y_k = x_k
     let integrator (x0: float) : StatefulBlock<float,float,float> =
         { init = x0
           step = fun dt x u ->
@@ -20,7 +17,6 @@ module Blocks =
 
 module Engine =
 
-    /// Pokreni stateful blok kroz N koraka uz input funkciju u(t)
     let runStateful
         (dt: Dt)
         (steps: int)
@@ -39,9 +35,6 @@ module Engine =
 
         loop 0 0.0 block.init []
 
-    /// Pokreni “ručno spojeni” mali pipeline:
-    /// u(t) = add( constant(1), constant(2) ) = 3
-    /// y(t) = integrator(0) of u(t)  => ramp 0, 0, 0.3, 0.6 ...
     let demoIntegratorRamp (dt: Dt) (steps: int) =
         let c1 = Blocks.constant 1.0
         let c2 = Blocks.constant 2.0
@@ -49,7 +42,6 @@ module Engine =
         let integ = Blocks.integrator 0.0
 
         let u (t: Time) =
-            // u ne ovisi o t u ovom demo-u
             sum (c1 (), c2 ())
 
         runStateful dt steps u integ
