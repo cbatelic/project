@@ -14,7 +14,6 @@
             <Setter Property="FontFamily" Value="Segoe UI, Inter, -apple-system, sans-serif"/>
         </Style>
 
-        <!-- Base button -->
         <Style Selector="Button">
             <Setter Property="Background" Value="#111826"/>
             <Setter Property="Foreground" Value="#B8CEDE"/>
@@ -55,7 +54,6 @@
 
     <Grid ColumnDefinitions="262,*,320" RowDefinitions="*">
 
-        <!-- ══════════════════ LEFT SIDEBAR ══════════════════ -->
         <Border Grid.Column="0"
                 Margin="12"
                 CornerRadius="16"
@@ -64,7 +62,6 @@
                 BorderThickness="1">
             <Grid RowDefinitions="Auto,*,Auto">
 
-                <!-- Brand -->
                 <Border Padding="16,15,16,13"
                         BorderBrush="#141E2E"
                         BorderThickness="0,0,0,1">
@@ -96,13 +93,11 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Scroll content -->
                 <ScrollViewer Grid.Row="1"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="12,14,12,10" Spacing="14">
-
-                        <!-- ── Simulation Blocks ── -->
+                        
                         <StackPanel Spacing="4">
                             <TextBlock Text="SIMULATION BLOCKS"
                                        FontSize="10"
@@ -115,10 +110,8 @@
                             <Button Name="BtnIntegrator" Content="x  Integrator"/>
                             <Button Name="BtnMonitor"   Content="~  Variable"/>
                         </StackPanel>
-
                         <Separator/>
 
-                        <!-- ── Constraint Blocks ── -->
                         <StackPanel Spacing="4">
                             <TextBlock Text="CONSTRAINT BLOCKS"
                                        FontSize="10"
@@ -132,7 +125,6 @@
 
                         <Separator/>
 
-                        <!-- ── Constraint Graph ── -->
                         <StackPanel Spacing="4">
                             <TextBlock Text="CONSTRAINT GRAPH"
                                        FontSize="10"
@@ -152,7 +144,6 @@
 
                         <Separator/>
 
-                        <!-- ── Service / Output ── -->
                         <StackPanel Spacing="6">
                             <TextBlock Text="SERVICE"
                                        FontSize="10"
@@ -162,14 +153,13 @@
 
                             <Button Name="BtnPing" Content="o  Ping Service (/health)"/>
 
-                            <!-- Terminal-style output -->
                             <Border Background="#060A0F"
                                     BorderBrush="#141E2C"
                                     BorderThickness="1"
                                     CornerRadius="10"
                                     ClipToBounds="True">
                                 <StackPanel>
-                                    <!-- Terminal chrome -->
+                                    
                                     <Border Padding="9,6"
                                             Background="#090D15"
                                             BorderBrush="#141E2C"
@@ -206,7 +196,6 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Footer tip -->
                 <Border Grid.Row="2"
                         Margin="12,0,12,12"
                         Padding="11,9"
@@ -222,10 +211,7 @@
             </Grid>
         </Border>
 
-        <!-- ══════════════════ CENTER ══════════════════ -->
         <Grid Grid.Column="1" Margin="0,12,0,12" RowDefinitions="Auto,*">
-
-            <!-- TOP BAR -->
             <Border Grid.Row="0"
                     Margin="0,0,12,10"
                     CornerRadius="13"
@@ -234,8 +220,7 @@
                     BorderThickness="1"
                     Padding="12,9">
                 <Grid ColumnDefinitions="Auto,Auto,*,Auto">
-
-                    <!-- Run / Clear -->
+                    
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <Button Name="BtnRun"
                                 Content="Run"
@@ -254,16 +239,14 @@
                                 Foreground="#E06880"
                                 HorizontalContentAlignment="Center"/>
                     </StackPanel>
-
-                    <!-- Divider line -->
+                    
                     <Rectangle Grid.Column="1"
                                Width="1"
                                Height="20"
                                Fill="#182030"
                                VerticalAlignment="Center"
                                Margin="12,0"/>
-
-                    <!-- Mode switcher -->
+                    
                     <StackPanel Grid.Column="2"
                                 Margin="4,0,0,0"
                                 Orientation="Horizontal"
@@ -298,8 +281,7 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
-
-                    <!-- Status badge -->
+                    
                     <Border Name="StatusBadge"
                             Grid.Column="3"
                             Background="#0C1018"
@@ -323,8 +305,7 @@
                     </Border>
                 </Grid>
             </Border>
-
-            <!-- EDITOR CANVAS -->
+            
             <Border Grid.Row="1"
                     Margin="0,0,12,0"
                     CornerRadius="16"
@@ -358,8 +339,7 @@
                 <Canvas Name="EditorCanvas" Background="Transparent"/>
             </Border>
         </Grid>
-
-        <!-- ══════════════════ RIGHT INSPECTOR ══════════════════ -->
+        
         <Border Grid.Column="2"
                 Margin="0,12,12,12"
                 CornerRadius="16"
