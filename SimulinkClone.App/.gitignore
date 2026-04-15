@@ -1,0 +1,23 @@
+﻿# Build
+bin/
+obj/
+
+# Rider
+.idea/
+*.sln.iml
+
+# .NET
+*.user
+*.suo
+*.cache
+*.exe
+*.dll
+*.pdb
+
+# NuGet
+project.assets.json
+project.nuget.cache
+project.packagespec.json
+
+# Logs
+*.log
